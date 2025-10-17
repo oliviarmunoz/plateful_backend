@@ -1,0 +1,3 @@
+# UserTastePreferencesConcept
+
+This concept changed a little bit from my original implementation. To start, instead of just preferences, there is also an option to include dislikes. This was mainly due to the fact that it's easier to store all information, rather than just solely preferences. I also reworded some of the other parts of the state to get a more clear concept. Finally, I got rid of the createProfile action because I want this to be solely focused on preferences to not conflate concerns. 

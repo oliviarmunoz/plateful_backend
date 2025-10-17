@@ -1,0 +1,3 @@
+# UserAuthentication Concept
+
+I originally did not include this concept because I thought it would fall under the umbrella of UserPreferences. However, after thinking about it some more, I realized that this was essential if I was ever going to save information for a specific user. I used some of my past ideas of UserAuthentication from the past PSET, but cleaned it up a little and added error handling for authenticate. I didn't have any majors in the implementation, but decided to implement this first to get more familiar with the Context tool for a smaller concept that I already had a good understanding of.

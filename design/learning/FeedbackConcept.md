@@ -1,0 +1,3 @@
+# FeedbackConcept
+
+This concept was not originally part of my concepts in Assignment 2. I added it to this because there needs to be a way for users to be able to review/rate their recommended dishes, so that their recommendations can become better over time. To implement this concept, I thought about what type of information would be necessary for feedback (author, target, and number). Since most food is based on a 5-star rating scale, the ratings must be between 0 and 5. 

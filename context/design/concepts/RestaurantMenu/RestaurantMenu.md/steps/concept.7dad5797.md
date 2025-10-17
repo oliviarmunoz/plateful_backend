@@ -1,0 +1,55 @@
+---
+timestamp: 'Thu Oct 16 2025 21:11:42 GMT-0400 (Eastern Daylight Time)'
+parent: '[[../20251016_211142.d27304de.md]]'
+content_id: 7dad5797b13ae7dbf2d185a5763d2d891b4c5967dc1cec8b3b37bae365894ff4
+---
+
+# concept: RestaurantMenu
+
+```markdown
+concept RestaurantMenu [Restaurant]
+
+purpose facilitate the presentation and discovery of a restaurant's offerings 
+
+principle when a restaurant owner adds new seasonal dishes or removes unavailable items, customers can always view an up-to-date and accurate menu to inform their ordering choices
+
+state
+  a set of MenuItems with
+    a restaurant Restaurant
+    a name String
+    a description String
+    a price Number
+
+actions
+  addMenuItem (restaurant: Restaurant, name: String, description: String, price: Number): (menuItem: MenuItem)
+    requires: menu item does not exist
+    effects: returns a newly created menu item for this restaurant with the specified name, description, and price
+
+  addMenuItem (restaurant: Restaurant, name: String, description: String, price: Number): (error: String)
+    requires: a menu item already exists
+    effects: returns an error message indicating that the menu item already exists
+  
+  updateMenuItem (menuItem: menuItem, restaurant: Restaurant, name: String, description: String, price: Number): (menuItem: MenuItem)
+    requires: a menu item exists
+    effects: updates the description and/or price of the existing menu item and returns the updated menu item
+
+  updateMenuItem (menuItem: menuItem, restaurant: Restaurant, name: String, description: String, price: Number): (error: String)
+    requires: menu item does not exist
+    effects: returns an error message indicating that no menu item exists to update
+
+  removeMenuItem (menuItem: menuItem): (success: Boolean)
+    requires: menu item exists 
+    effects: returns true and deletes the menu item
+
+  removeMenuItem (menuItem: menuItem): (error: String)
+    requires: menu item exists 
+    effects: returns an error message indicating that no menu item exists to delete
+
+  /_getMenuItems (restaurant: Restaurant): (menuItem: MenuItem)
+    requires: true
+    effects: returns a set of all menu items associated with the given restaurant
+
+  /_getMenuItemDetails (menuItem: MenuItem): (name: String, description: String, price: Number)
+    requires: menuItem exists
+    effects: returns the name, description, and price of the specified menu item
+```
