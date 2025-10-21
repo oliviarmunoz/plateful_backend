@@ -8,7 +8,7 @@ import { freshID } from "@utils/database.ts";
   purpose limit access to known users
   principle if a user registers with a unique username and password, they can later log in using those
   same credentials to prove their identity and gain access.
-  
+
   state
       a set of Credentials with
           a username String

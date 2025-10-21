@@ -139,3 +139,8 @@ export default class UserAuthenticationConcept {
   }
 }
 ```
+
+# this is the console log output: RestaurantMenu._getRecommendation Invalid 'restaurant' argument: Expected string, got object. Value: {
+  restaurantName: "Chipotle",
+  user: "019a0280-96e3-7ba2-826b-066b9d543b0e"
+}

@@ -1,45 +1,70 @@
 import { Collection, Db } from "npm:mongodb";
 import { Empty, ID } from "@utils/types.ts";
 
-// Declare collection prefix for MongoDB. Uses the concept name.
+/**
+ * concept UserTastePreferences [User, Dish]
+
+  purpose enable users to mark dishes as liked or disliked to build a profile of their taste preferences
+
+  principle when a user adds a dish to their liked list, that preference is recorded, influencing future recommendations
+
+  state
+    a set of Users with
+      a set of likedDishes Dish
+      a set of dislikedDishes Dish
+
+  actions
+    addLikedDish (user: User, dish: Dish)
+      requires:
+      effects: add dish to likedDishes for user. If user record does not exist, create it first with empty lists. If dish was previously in dislikedDishes, it is removed from there.
+
+    removeLikedDish (user: User, dish: Dish)
+      requires: user exists, dish exists, dish is in likedDishes for user
+      effects: remove dish from likedDishes for user
+
+    addDislikedDish (user: User, dish: Dish)
+      requires:
+      effects: add dish to dislikedDishes for user. If user record does not exist, create it first with empty lists. If dish was previously in likedDishes, it is removed from there.
+
+    removeDislikedDish (user: User, dish: Dish)
+      requires: user exists, dish exists, dish is in dislikedDishes for user
+      effects: remove dish from dislikedDishes for user
+
+  queries
+    _getLikedDishes (user: User): (dishes: set(Dish))
+      requires: user exists
+      effects: returns all dishes liked by the specified user
+
+    _getDislikedDishes (user: User): (dishes: set(Dish))
+      requires: user exists
+      effects: returns all dishes disliked by the specified user
+ */
+
 const PREFIX = "UserTastePreferences" + ".";
 
 // Generic types for this concept, treated as opaque identifiers.
 type User = ID;
 type Dish = ID;
 
-/**
- * Interface representing the structure of a user document in the MongoDB collection.
- * This corresponds to the concept's state declaration:
- * "a set of Users with a set of likedDishes Dish and a set of dislikedDishes Dish"
- */
 interface UserDocument {
-  _id: User; // The ID of the user
+  _id: User;
   likedDishes: Dish[];
   dislikedDishes: Dish[];
 }
 
-/**
- * Concept: UserTastePreferences [User, Dish]
- *
- * purpose enable users to mark dishes as liked or disliked to build a profile of their taste preferences
- *
- * principle when a user adds a dish to their liked list, that preference is recorded, influencing future recommendations
- */
 export default class UserTastePreferencesConcept {
   private users: Collection<UserDocument>;
 
   constructor(private readonly db: Db) {
     this.users = this.db.collection(PREFIX + "users");
-    // MongoDB automatically indexes the _id field.
   }
 
   /**
-   * addLikedDish (user: User, dish: Dish): Empty
+   * Action: addLikedDish (user: User, dish: Dish): Empty
    *
-   * **requires** true
+   * @requires
    *
-   * **effects** add dish to likedDishes for user. If user record does not exist, create it first with empty lists.
+   * @effects add dish to likedDishes for user. If user record does not exist, create it first with empty lists.
    *            If dish was previously in dislikedDishes, it is removed from there.
    */
   async addLikedDish(
@@ -56,20 +81,20 @@ export default class UserTastePreferencesConcept {
       { upsert: true, returnDocument: "after" }, // Create document if it doesn't exist
     );
 
-    return {}
+    return {};
   }
 
   /**
-   * removeLikedDish (user: User, dish: Dish): Empty
+   * Action: removeLikedDish (user: User, dish: Dish): Empty
    *
-   * **requires** user exists, dish is in likedDishes for user
+   * @requires user exists, dish is in likedDishes for user
    *
-   * **effects** remove dish from likedDishes for user
+   * @effects remove dish from likedDishes for user
    */
   async removeLikedDish(
     { user, dish }: { user: User; dish: Dish },
   ): Promise<Empty | { error: string }> {
-    // Precondition check: user must exist and dish must be in likedDishes
+    // check user must exist and dish must be in likedDishes
     const existingUser = await this.users.findOne({ _id: user });
 
     if (!existingUser) {
@@ -97,18 +122,16 @@ export default class UserTastePreferencesConcept {
   }
 
   /**
-   * addDislikedDish (user: User, dish: Dish): Empty
+   * Action: addDislikedDish (user: User, dish: Dish): Empty
    *
-   * **requires** true
+   * @requires
    *
-   * **effects** add dish to dislikedDishes for user. If user record does not exist, create it first with empty lists.
+   * @effects add dish to dislikedDishes for user. If user record does not exist, create it first with empty lists.
    *            If dish was previously in likedDishes, it is removed from there.
    */
   async addDislikedDish(
     { user, dish }: { user: User; dish: Dish },
   ): Promise<Empty | { error: string }> {
-    // MongoDB's $addToSet implicitly handles array creation if it doesn't exist
-    // when used with upsert: true, so $setOnInsert for the same field is redundant and causes conflict.
     const result = await this.users.findOneAndUpdate(
       { _id: user },
       {
@@ -118,20 +141,20 @@ export default class UserTastePreferencesConcept {
       { upsert: true, returnDocument: "after" }, // Create document if it doesn't exist
     );
 
-    return {}
+    return {};
   }
 
   /**
-   * removeDislikedDish (user: User, dish: Dish): Empty
+   * Action: removeDislikedDish (user: User, dish: Dish): Empty
    *
-   * **requires** user exists, dish is in dislikedDishes for user
+   * @requires user exists, dish is in dislikedDishes for user
    *
-   * **effects** remove dish from dislikedDishes for user
+   * @effects remove dish from dislikedDishes for user
    */
   async removeDislikedDish(
     { user, dish }: { user: User; dish: Dish },
   ): Promise<Empty | { error: string }> {
-    // Precondition check: user must exist and dish must be in dislikedDishes
+    // check user must exist and dish must be in dislikedDishes
     const existingUser = await this.users.findOne({ _id: user });
 
     if (!existingUser) {
@@ -164,54 +187,57 @@ export default class UserTastePreferencesConcept {
   }
 
   /**
-   * _getLikedDishes (user: User): (dishes: set(Dish))
+   * Query: _getLikedDishes (user: User): (dishes: set(Dish))
    *
-   * **requires** user exists
+   * @requires user exists
    *
-   * **effects** returns all dishes liked by the specified user
+   * @effects returns all dishes liked by the specified user
+   * If the user does not exist yet, it initializes a new user record with empty preferences.
    */
   async _getLikedDishes(
     { user }: { user: User },
   ): Promise<{ dishes: Dish }[] | [{ error: string }]> {
-    // Precondition check: user must exist
-    const existingUser = await this.users.findOne({ _id: user }, {
-      projection: { likedDishes: 1 },
-    });
-
+    const existingUser = await this.users.findOne(
+      { _id: user },
+      { projection: { likedDishes: 1 } },
+    );
     if (!existingUser) {
-      return [{ error: `User with ID '${user}' does not exist.` }];
+      console.warn(
+        `User with ID '${user}' not found. Initializing new user record.`,
+      );
+      await this.users.insertOne({
+        _id: user,
+        likedDishes: [],
+        dislikedDishes: [],
+      });
+
+      return [];
     }
 
-    // Ensure likedDishes is an array, defaulting to empty if not present.
+    // Return liked dishes normally
     const likedDishes = existingUser.likedDishes || [];
-
-    // Return an array of dictionaries, where each dictionary has a 'dishes' field
     return likedDishes.map((dish) => ({ dishes: dish }));
   }
 
   /**
-   * _getDislikedDishes (user: User): (dishes: set(Dish))
+   * Query: _getDislikedDishes (user: User): (dishes: set(Dish))
    *
-   * **requires** user exists
+   * @requires user exists
    *
-   * **effects** returns all dishes disliked by the specified user
+   * @effects returns all dishes disliked by the specified user
    */
   async _getDislikedDishes(
     { user }: { user: User },
   ): Promise<{ dishes: Dish }[] | [{ error: string }]> {
-    // Precondition check: user must exist
+    // check user must exist
     const existingUser = await this.users.findOne({ _id: user }, {
       projection: { dislikedDishes: 1 },
     });
-
     if (!existingUser) {
       return [{ error: `User with ID '${user}' does not exist.` }];
     }
 
-    // Ensure dislikedDishes is an array, defaulting to empty if not present.
     const dislikedDishes = existingUser.dislikedDishes || [];
-
-    // Return an array of dictionaries, where each dictionary has a 'dishes' field
     return dislikedDishes.map((dish) => ({ dishes: dish }));
   }
 }

@@ -1,3 +1,22 @@
+---
+timestamp: 'Tue Oct 21 2025 00:23:25 GMT-0400 (Eastern Daylight Time)'
+parent: '[[../20251021_002325.8cdd38a4.md]]'
+content_id: a8946cd9eb1f5df40634a97e104723ece1ac958db5bcc5c6c378acae8c063b01
+---
+
+# response:
+
+The error message `[{"error":"No menu items found for restaurant '[object Object]'."}]` strongly indicates that the `restaurant` argument being passed to the `_getRecommendation` method is not a string, but an object. While TypeScript provides static type checking at compile time, runtime inputs (especially from external API calls that would invoke this concept) might not always adhere to the declared types.
+
+The current logic in `_getRecommendation` proceeds to call `_getMenuItems({ restaurant })` with this non-string object. When `_getMenuItems` then uses this object in a MongoDB query like `this.menuItems.find({ restaurant })`, it won't find any documents (since the `restaurant` field in `MenuItemDocument` is a string), resulting in an empty menu array. Subsequently, the `if (!menu.length)` check evaluates to `true`, and the error message `No menu items found for restaurant '[object Object]'` is returned, where `[object Object]` is the string representation of the problematic input.
+
+To fix this, we need to add a runtime validation check for the `restaurant` parameter at the beginning of the `_getRecommendation` method. This will ensure that `restaurant` is indeed a string before any further operations, providing a more informative error message if the input is incorrect.
+
+Here's the corrected code:
+
+```typescript
+// file: src/concepts/RestaurantMenu/RestaurantMenuConcept.ts
+
 import { Collection, Db } from "npm:mongodb";
 import { ID } from "@utils/types.ts";
 import { freshID } from "@utils/database.ts";
@@ -23,7 +42,7 @@ const PREFIX = "RestaurantMenu" + ".";
 export type MenuItem = ID;
 
 interface MenuItemDocument {
-  _id: MenuItem;
+  _id: MenuItem; 
   restaurant: string;
   name: string;
   description: string;
@@ -41,8 +60,7 @@ export default class RestaurantMenuConcept {
 
   constructor(private readonly db: Db) {
     this.menuItems = this.db.collection(PREFIX + "menuItems");
-    // Assuming the UserTastePreferencesConcept stores its users in a collection named "UserTastePreferences.users"
-    this.users = this.db.collection("UserTastePreferences.users");
+    this.users = this.db.collection("Users");
   }
 
   /**
@@ -204,21 +222,20 @@ export default class RestaurantMenuConcept {
     { restaurant, user }: { restaurant: string; user: ID },
   ): Promise<{ recommendation: string }[] | [{ error: string }]> {
     try {
+      // --- FIX START ---
       // Runtime validation for the 'restaurant' argument
-      if (typeof restaurant !== "string") {
+      if (typeof restaurant !== 'string') {
         console.error(
           `[RestaurantMenu._getRecommendation] Invalid 'restaurant' argument: Expected string, got ${typeof restaurant}. Value:`,
           restaurant,
         );
         return [{ error: "Invalid input: 'restaurant' must be a string." }];
       }
+      // --- FIX END ---
 
       // Step 1: Fetch the restaurant’s menu
       const menu = await this._getMenuItems({ restaurant });
-      console.log(
-        `[RestaurantMenu._getRecommendation] Menu for '${restaurant}':`,
-        menu.map((item) => item.name),
-      );
+      console.log(menu);
 
       if (!menu.length) {
         return [{
@@ -226,40 +243,23 @@ export default class RestaurantMenuConcept {
         }];
       }
 
-      // Step 2: Fetch the user's taste preferences
+      // Step 2: Fetch the user
       const userId: ID = user;
-      console.log(
-        `[RestaurantMenu._getRecommendation] Attempting to fetch user with ID: ${userId}`,
-      );
       const userData = await this.users.findOne(
         { _id: userId },
         { projection: { tastePreferences: 1 } },
       );
-      console.log(
-        `[RestaurantMenu._getRecommendation] User data fetched:`,
-        userData,
-      );
 
       if (!userData) {
-        return [{
-          error:
-            `User with ID '${user}' not found in the UserTastePreferences collection.`,
-        }];
+        return [{ error: `User with ID '${user}' does not exist.` }];
       }
 
       const preferences = userData.tastePreferences;
-
-      // --- FIX START ---
-      // If user has no preferences, return a generic recommendation (first item on menu)
       if (!preferences || Object.keys(preferences).length === 0) {
-        console.log(
-          `[RestaurantMenu._getRecommendation] User '${user}' has no defined taste preferences. Returning first menu item as generic recommendation.`,
-        );
-        return [{ recommendation: menu[0].name }];
+        return [{ error: `User '${user}' has no defined taste preferences.` }];
       }
-      // --- FIX END ---
 
-      // Step 3: Construct prompt with user preferences
+      // Step 3: Construct prompt
       const preferencesText = Object.entries(preferences)
         .map(([trait, score]) => `${trait}: ${score}/5`)
         .join("\n");
@@ -289,15 +289,7 @@ Respond only in JSON format:
       }
 
       const llm = new GeminiLLM({ apiKey });
-      console.log(
-        `[RestaurantMenu._getRecommendation] Calling LLM with prompt for user '${user}'...`,
-      );
       const llmResponse = await llm.executeLLM(prompt);
-      console.log(
-        `[RestaurantMenu._getRecommendation] LLM raw response: ${
-          llmResponse.substring(0, 100)
-        }...`,
-      );
 
       const jsonMatch = llmResponse.match(/\{[\s\S]*\}/);
       if (!jsonMatch) {
@@ -322,9 +314,6 @@ Respond only in JSON format:
         }];
       }
 
-      console.log(
-        `[RestaurantMenu._getRecommendation] Recommended dish for user '${user}': ${match.name}`,
-      );
       return [{ recommendation: match.name }];
     } catch (err) {
       console.error("[RestaurantMenu._getRecommendation] Error:", err);
@@ -332,3 +321,4 @@ Respond only in JSON format:
     }
   }
 }
+```

@@ -1,3 +1,72 @@
+---
+timestamp: 'Tue Oct 21 2025 00:27:20 GMT-0400 (Eastern Daylight Time)'
+parent: '[[../20251021_002720.b982b859.md]]'
+content_id: 0754c7153a2c848f51219295c8b541b8ac44bd0e4a3ba6d8f8b9bb40876d3c67
+---
+
+# response:
+
+The error `[{"error":"Invalid input: 'restaurant' must be a string."}]` is coming directly from the runtime validation we added:
+
+```typescript
+      if (typeof restaurant !== 'string') {
+        console.error(
+          `[RestaurantMenu._getRecommendation] Invalid 'restaurant' argument: Expected string, got ${typeof restaurant}. Value:`,
+          restaurant,
+        );
+        return [{ error: "Invalid input: 'restaurant' must be a string." }];
+      }
+```
+
+This means the fix itself is working correctly! It's now explicitly telling you that *at the point this method is called*, the `restaurant` argument is still not a string.
+
+**The code within the `RestaurantMenuConcept` class is now robust against this specific input error.**
+
+The problem lies in **how the `_getRecommendation` method is being called** from outside this class (e.g., from an API handler, a test, or another part of your application). The value being passed into the `restaurant` parameter of `_getRecommendation` is not a string.
+
+**To resolve this, you need to investigate the code that *calls* `_getRecommendation` and ensure it's passing a string for the `restaurant` parameter.**
+
+For example, if you're calling it like this:
+
+```typescript
+// Somewhere in your application logic
+const restaurantData = { name: "The Great Eatery", location: "Downtown" };
+const userId = "user-alice" as ID;
+
+// INCORRECT CALL: You're passing the whole object as 'restaurant'
+const recommendation = await restaurantMenuConcept._getRecommendation({
+  restaurant: restaurantData, // <-- This is the problem! It should be restaurantData.name
+  user: userId
+});
+```
+
+You would need to correct it to:
+
+```typescript
+// Somewhere in your application logic
+const restaurantData = { name: "The Great Eatery", location: "Downtown" };
+const userId = "user-alice" as ID;
+
+// CORRECT CALL: Pass only the restaurant name (which is a string)
+const recommendation = await restaurantMenuConcept._getRecommendation({
+  restaurant: restaurantData.name, // Corrected to pass the string name
+  user: userId
+});
+```
+
+**What to do next:**
+
+1. **Look for the call site(s) of `restaurantMenuConcept._getRecommendation(...)` in your project.**
+2. **Inspect the value being passed for the `restaurant` argument.**
+3. **Ensure that value is a `string` type.**
+
+The `console.error` message you're getting in the server logs should already give you a strong hint about the `typeof restaurant` and the `Value:` of the incorrect input. Use that information to trace back to where the bad input originates.
+
+Here's the code again, which is correct on its own, with the understanding that the error is external to this file:
+
+```typescript
+// file: src/concepts/RestaurantMenu/RestaurantMenuConcept.ts
+
 import { Collection, Db } from "npm:mongodb";
 import { ID } from "@utils/types.ts";
 import { freshID } from "@utils/database.ts";
@@ -23,7 +92,7 @@ const PREFIX = "RestaurantMenu" + ".";
 export type MenuItem = ID;
 
 interface MenuItemDocument {
-  _id: MenuItem;
+  _id: MenuItem; 
   restaurant: string;
   name: string;
   description: string;
@@ -41,8 +110,7 @@ export default class RestaurantMenuConcept {
 
   constructor(private readonly db: Db) {
     this.menuItems = this.db.collection(PREFIX + "menuItems");
-    // Assuming the UserTastePreferencesConcept stores its users in a collection named "UserTastePreferences.users"
-    this.users = this.db.collection("UserTastePreferences.users");
+    this.users = this.db.collection("Users");
   }
 
   /**
@@ -204,6 +272,7 @@ export default class RestaurantMenuConcept {
     { restaurant, user }: { restaurant: string; user: ID },
   ): Promise<{ recommendation: string }[] | [{ error: string }]> {
     try {
+      // --- FIX START ---
       // Runtime validation for the 'restaurant' argument
       if (typeof restaurant !== "string") {
         console.error(
@@ -212,13 +281,11 @@ export default class RestaurantMenuConcept {
         );
         return [{ error: "Invalid input: 'restaurant' must be a string." }];
       }
+      // --- FIX END ---
 
       // Step 1: Fetch the restaurant’s menu
       const menu = await this._getMenuItems({ restaurant });
-      console.log(
-        `[RestaurantMenu._getRecommendation] Menu for '${restaurant}':`,
-        menu.map((item) => item.name),
-      );
+      console.log(menu);
 
       if (!menu.length) {
         return [{
@@ -226,40 +293,23 @@ export default class RestaurantMenuConcept {
         }];
       }
 
-      // Step 2: Fetch the user's taste preferences
+      // Step 2: Fetch the user
       const userId: ID = user;
-      console.log(
-        `[RestaurantMenu._getRecommendation] Attempting to fetch user with ID: ${userId}`,
-      );
       const userData = await this.users.findOne(
         { _id: userId },
         { projection: { tastePreferences: 1 } },
       );
-      console.log(
-        `[RestaurantMenu._getRecommendation] User data fetched:`,
-        userData,
-      );
 
       if (!userData) {
-        return [{
-          error:
-            `User with ID '${user}' not found in the UserTastePreferences collection.`,
-        }];
+        return [{ error: `User with ID '${user}' does not exist.` }];
       }
 
       const preferences = userData.tastePreferences;
-
-      // --- FIX START ---
-      // If user has no preferences, return a generic recommendation (first item on menu)
       if (!preferences || Object.keys(preferences).length === 0) {
-        console.log(
-          `[RestaurantMenu._getRecommendation] User '${user}' has no defined taste preferences. Returning first menu item as generic recommendation.`,
-        );
-        return [{ recommendation: menu[0].name }];
+        return [{ error: `User '${user}' has no defined taste preferences.` }];
       }
-      // --- FIX END ---
 
-      // Step 3: Construct prompt with user preferences
+      // Step 3: Construct prompt
       const preferencesText = Object.entries(preferences)
         .map(([trait, score]) => `${trait}: ${score}/5`)
         .join("\n");
@@ -289,15 +339,7 @@ Respond only in JSON format:
       }
 
       const llm = new GeminiLLM({ apiKey });
-      console.log(
-        `[RestaurantMenu._getRecommendation] Calling LLM with prompt for user '${user}'...`,
-      );
       const llmResponse = await llm.executeLLM(prompt);
-      console.log(
-        `[RestaurantMenu._getRecommendation] LLM raw response: ${
-          llmResponse.substring(0, 100)
-        }...`,
-      );
 
       const jsonMatch = llmResponse.match(/\{[\s\S]*\}/);
       if (!jsonMatch) {
@@ -322,9 +364,6 @@ Respond only in JSON format:
         }];
       }
 
-      console.log(
-        `[RestaurantMenu._getRecommendation] Recommended dish for user '${user}': ${match.name}`,
-      );
       return [{ recommendation: match.name }];
     } catch (err) {
       console.error("[RestaurantMenu._getRecommendation] Error:", err);
@@ -332,3 +371,4 @@ Respond only in JSON format:
     }
   }
 }
+```

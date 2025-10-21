@@ -3,7 +3,7 @@ import { getDb } from "@utils/database.ts";
 import { walk } from "jsr:@std/fs";
 import { parseArgs } from "jsr:@std/cli/parse-args";
 import { toFileUrl } from "jsr:@std/path/to-file-url";
-
+import { cors } from "jsr:@hono/hono/cors";
 // Parse command-line arguments for port and base URL
 const flags = parseArgs(Deno.args, {
   string: ["port", "baseUrl"],
@@ -24,6 +24,14 @@ async function main() {
   const [db] = await getDb();
   const app = new Hono();
 
+  app.use(
+    "*",
+    cors({
+      origin: "http://localhost:5173",
+      allowMethods: ["GET", "POST", "OPTIONS"],
+      allowHeaders: ["Content-Type", "Authorization"],
+    }),
+  );
   app.get("/", (c) => c.text("Concept Server is running."));
 
   // --- Dynamic Concept Loading and Routing ---

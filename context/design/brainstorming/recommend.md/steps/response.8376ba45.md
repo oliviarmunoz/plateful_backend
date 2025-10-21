@@ -1,3 +1,18 @@
+---
+timestamp: 'Tue Oct 21 2025 00:47:05 GMT-0400 (Eastern Daylight Time)'
+parent: '[[../20251021_004705.abaa0f42.md]]'
+content_id: 8376ba4521433b788acf9be650c15621413024581cb4fbd7973811243f45132e
+---
+
+# response:
+
+You're right, the current logic explicitly errors out if a user has no taste preferences. To make it more robust, we can introduce a fallback: if a user has no preferences, we can simply recommend the first available item from the restaurant's menu. This provides a "generic" recommendation without needing an LLM call for that specific case.
+
+Here's the updated `_getRecommendation` method with this change:
+
+```typescript
+// file: src/concepts/RestaurantMenu/RestaurantMenuConcept.ts
+
 import { Collection, Db } from "npm:mongodb";
 import { ID } from "@utils/types.ts";
 import { freshID } from "@utils/database.ts";
@@ -217,7 +232,7 @@ export default class RestaurantMenuConcept {
       const menu = await this._getMenuItems({ restaurant });
       console.log(
         `[RestaurantMenu._getRecommendation] Menu for '${restaurant}':`,
-        menu.map((item) => item.name),
+        menu.map(item => item.name),
       );
 
       if (!menu.length) {
@@ -252,9 +267,7 @@ export default class RestaurantMenuConcept {
       // --- FIX START ---
       // If user has no preferences, return a generic recommendation (first item on menu)
       if (!preferences || Object.keys(preferences).length === 0) {
-        console.log(
-          `[RestaurantMenu._getRecommendation] User '${user}' has no defined taste preferences. Returning first menu item as generic recommendation.`,
-        );
+        console.log(`[RestaurantMenu._getRecommendation] User '${user}' has no defined taste preferences. Returning first menu item as generic recommendation.`);
         return [{ recommendation: menu[0].name }];
       }
       // --- FIX END ---
@@ -289,15 +302,10 @@ Respond only in JSON format:
       }
 
       const llm = new GeminiLLM({ apiKey });
-      console.log(
-        `[RestaurantMenu._getRecommendation] Calling LLM with prompt for user '${user}'...`,
-      );
+      console.log(`[RestaurantMenu._getRecommendation] Calling LLM with prompt for user '${user}'...`);
       const llmResponse = await llm.executeLLM(prompt);
-      console.log(
-        `[RestaurantMenu._getRecommendation] LLM raw response: ${
-          llmResponse.substring(0, 100)
-        }...`,
-      );
+      console.log(`[RestaurantMenu._getRecommendation] LLM raw response: ${llmResponse.substring(0, 100)}...`);
+
 
       const jsonMatch = llmResponse.match(/\{[\s\S]*\}/);
       if (!jsonMatch) {
@@ -322,9 +330,7 @@ Respond only in JSON format:
         }];
       }
 
-      console.log(
-        `[RestaurantMenu._getRecommendation] Recommended dish for user '${user}': ${match.name}`,
-      );
+      console.log(`[RestaurantMenu._getRecommendation] Recommended dish for user '${user}': ${match.name}`);
       return [{ recommendation: match.name }];
     } catch (err) {
       console.error("[RestaurantMenu._getRecommendation] Error:", err);
@@ -332,3 +338,22 @@ Respond only in JSON format:
     }
   }
 }
+```
+
+**Key Change:**
+
+The block that previously returned an error for users without preferences now checks:
+
+```typescript
+      if (!preferences || Object.keys(preferences).length === 0) {
+        console.log(`[RestaurantMenu._getRecommendation] User '${user}' has no defined taste preferences. Returning first menu item as generic recommendation.`);
+        return [{ recommendation: menu[0].name }];
+      }
+```
+
+This ensures that:
+
+1. If the user has preferences, the LLM is used as before.
+2. If the user does *not* have preferences (or their `tastePreferences` object is empty), the first item from the `menu` array is returned as a generic recommendation. This assumes `menu` is not empty, which is already checked earlier in the method.
+
+This makes the recommendation system more user-friendly by always providing a suggestion if a menu exists.
