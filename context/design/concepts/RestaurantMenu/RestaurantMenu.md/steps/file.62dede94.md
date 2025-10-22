@@ -1,46 +1,30 @@
+---
+timestamp: 'Tue Oct 21 2025 20:56:10 GMT-0400 (Eastern Daylight Time)'
+parent: '[[../20251021_205610.2a3d2c92.md]]'
+content_id: 62dede94ae3a284f4fdd9d580eef484ffe691d51ad89c4585a5d14a7b80fee6f
+---
+
+# file: src/concepts/RestaurantMenu/RestaurantMenuConcept.ts
+
+```typescript
 import { Collection, Db } from "npm:mongodb";
 import { ID } from "@utils/types.ts";
 import { freshID } from "@utils/database.ts";
 import { GeminiLLM } from "@utils/gemini-llm.ts";
 
 /**
-  concept RestaurantMenu [Restaurant, User]
+  concept RestaurantMenu [Restaurant]
 
-  purpose allow users to reliably view an up-to-date and comprehensive list of a restaurant's dishes, descriptions, and prices to inform their choices, and receive personalized recommendations
+  purpose allow users to view an up-to-date and comprehensive list of a restaurant's dishes, descriptions, and prices
 
-  principle when a restaurant owner adds new dishes or removes unavailable ones, customers can always view an up-to-date menu to get a dish recommendation tailored to their preferences.
+  principle when a restaurant adds or removes items, customers can always see the accurate, current menu
 
   state
-  a set of MenuItems with
-    a restaurant Restaurant
-    a name String
-    a description String
-    a price Number
-
-  actions
-    addMenuItem (restaurant: Restaurant, name: String, description: String, price: Number): (menuItem: MenuItem)
-      requires: menu item with the given name does not already exist for this restaurant
-      effects: returns a newly created menu item with this restaurant, name, description, and price
-
-    updateMenuItem (menuItem: MenuItem, newDescription: String, newPrice: Number): (menuItem: MenuItem)
-      requires: a menu item with the given ID exists
-      effects: updates the description and/or price of the existing menu item and returns the updated menu item
-
-    removeMenuItem (menuItem: MenuItem): (success: Boolean)
-      requires: menu item with the given ID exists
-      effects: returns true and deletes the menu item
-
-    /_getMenuItems (restaurant: Restaurant): (menuItem: MenuItem)
-      requires: true
-      effects: returns a set of all menu items associated with the given restaurant, including their name, description, and price
-
-    /_getMenuItemDetails (menuItem: MenuItem): (name: String, description: String, price: Number)
-      requires: menuItem with the given ID exists
-      effects: returns the name, description, and price of the specified menu item
-
-    /_getRecommendation (restaurant: Restaurant, user: User): (recommendation: String)
-      requires: a restaurant with the given ID exists and has at least one menu item; a user with the given ID exists
-      effects: returns the name of a menu item from the specified restaurant that is recommended for the user via an LLM, based on their taste preferences and the current menu items. If no specific preferences are found, a generic recommendation may be provided.
+   - a set of MenuItems with
+     - a restaurantName String
+     - an itemName String
+     - a description String
+     - a price number
 */
 
 const PREFIX = "RestaurantMenu" + ".";
@@ -55,10 +39,13 @@ interface MenuItemDocument {
   price: number;
 }
 
+// 🐛 FIX: Updated UserDocument interface to reflect the actual database schema
 interface UserDocument {
   _id: ID;
-  likedDishes?: string[];
-  dislikedDishes?: string[];
+  likedDishes?: string[]; // Assuming these are arrays of dish names (strings)
+  dislikedDishes?: string[]; // Assuming these are arrays of dish names (strings)
+  // The 'tastePreferences' field is NOT present in the DB, so we remove it here.
+  // It will be constructed on the fly for the LLM.
 }
 
 export default class RestaurantMenuConcept {
@@ -67,13 +54,13 @@ export default class RestaurantMenuConcept {
 
   constructor(private readonly db: Db) {
     this.menuItems = this.db.collection(PREFIX + "menuItems");
+    // Assuming the UserTastePreferencesConcept stores its users in a collection named "UserTastePreferences.users"
     this.users = this.db.collection("UserTastePreferences.users");
   }
 
   /**
-   * Action: Add a new menu item for a restaurant
-   * @requires menu item with the given name does not already exist for this restaurant
-   * @effects returns a newly created menu item with this restaurant, name, description, and price
+   * Add a new menu item for a restaurant.
+   * Automatically creates the restaurant entry if it doesn't exist.
    */
   async addMenuItem(
     { restaurant, name, description, price }: {
@@ -84,6 +71,10 @@ export default class RestaurantMenuConcept {
     },
   ): Promise<{ menuItem: MenuItem } | { error: string }> {
     try {
+      console.log(
+        `[RestaurantMenu] Adding menu item: ${name} for restaurant: ${restaurant}`,
+      );
+
       // Check for duplicate items
       const existingMenuItem = await this.menuItems.findOne({
         restaurant,
@@ -96,6 +87,7 @@ export default class RestaurantMenuConcept {
         };
       }
 
+      // Use freshID() to create a new string-based ID as per instructions
       const newId = freshID();
 
       const newMenuItem: MenuItemDocument = {
@@ -109,10 +101,18 @@ export default class RestaurantMenuConcept {
       const result = await this.menuItems.insertOne(newMenuItem);
 
       if (!result.acknowledged) {
+        console.error(
+          "[RestaurantMenu] Insert failed: Mongo did not acknowledge insert.",
+        );
         return { error: "Failed to add menu item. Please try again." };
       }
+
+      console.log(
+        `[RestaurantMenu] Successfully added menu item: ${name} (ID: ${newId})`,
+      );
       return { menuItem: newMenuItem._id };
     } catch (err) {
+      console.error("[RestaurantMenu.addMenuItem] Error:", err);
       return {
         error: (err as Error).message || "An unexpected error occurred.",
       };
@@ -120,9 +120,7 @@ export default class RestaurantMenuConcept {
   }
 
   /**
-   * Action: Update Menu Item
-   * @requires a menu item with the given ID exists
-   * @effects updates the description and/or price of the existing menu item and returns the updated menu item
+   * Update Menu Item
    */
   async updateMenuItem(
     { menuItem, newDescription, newPrice }: {
@@ -153,21 +151,20 @@ export default class RestaurantMenuConcept {
       { returnDocument: "after" },
     );
 
-    if (!result) {
+    if (!result?.value) {
       return { error: `No menu item found with ID '${menuItem}' to update.` };
     }
 
-    return { menuItem: result._id };
+    return { menuItem: result.value._id };
   }
 
   /**
-   * Action: Remove Menu Item
-   * @requires menu item with the given ID exists
-   * @effects returns true and deletes the menu item
+   * Remove Menu Item
    */
   async removeMenuItem(
     { menuItem }: { menuItem: MenuItem },
   ): Promise<{ success: boolean } | { error: string }> {
+    // Query using the string ID directly
     const result = await this.menuItems.deleteOne({ _id: menuItem });
     if (result.deletedCount === 0) {
       return { error: `No menu item found with ID '${menuItem}' to delete.` };
@@ -176,9 +173,7 @@ export default class RestaurantMenuConcept {
   }
 
   /**
-   * Query: Get all menu items for a restaurant (by name)
-   * @requires 
-   * @effects returns a set of all menu items associated with the given restaurant, including their name, description, and price
+   * Get all menu items for a restaurant (by name)
    */
   async _getMenuItems(
     { restaurant }: { restaurant: string },
@@ -201,9 +196,7 @@ export default class RestaurantMenuConcept {
   }
 
   /**
-   * Query: Get details for one menu item
-   * @requires menuItem with the given ID exists
-   * @effects returns the name, description, and price of the specified menu item
+   * Get details for one menu item
    */
   async _getMenuItemDetails(
     { menuItem }: { menuItem: string },
@@ -218,17 +211,22 @@ export default class RestaurantMenuConcept {
   }
 
   /**
-   * Query: Get a dish recommendation for a user at a specific restaurant
-   * @requires a restaurant with the given ID exists and has at least one menu item; a user with the given ID exists
-   * @effects returns the name of a menu item from the specified restaurant that is recommended for the user 
-   *          via an LLM, based on their taste preferences and the current menu items. 
-   *          If no specific preferences are found, a generic recommendation may be provided.
+   * Get a dish recommendation for a user at a specific restaurant
    */
   async _getRecommendation(
     { restaurant, user }: { restaurant: string; user: ID },
   ): Promise<{ recommendation: string }[] | [{ error: string }]> {
     try {
-      // Fetch the restaurant’s menu
+      // Runtime validation for the 'restaurant' argument
+      if (typeof restaurant !== "string") {
+        console.error(
+          `[RestaurantMenu._getRecommendation] Invalid 'restaurant' argument: Expected string, got ${typeof restaurant}. Value:`,
+          restaurant,
+        );
+        return [{ error: "Invalid input: 'restaurant' must be a string." }];
+      }
+
+      // Step 1: Fetch the restaurant’s menu
       const menu = await this._getMenuItems({ restaurant });
       console.log(
         `[RestaurantMenu._getRecommendation] Menu for '${restaurant}':`,
@@ -241,11 +239,19 @@ export default class RestaurantMenuConcept {
         }];
       }
 
-      // Fetch the user's taste preferences
+      // Step 2: Fetch the user's taste preferences (now from liked/disliked dishes)
       const userId: ID = user;
+      console.log(
+        `[RestaurantMenu._getRecommendation] Attempting to fetch user with ID: ${userId} from collection '${this.users.collectionName}'`,
+      );
+      // 🐛 FIX: Projecting likedDishes and dislikedDishes
       const userData = await this.users.findOne(
         { _id: userId },
         { projection: { likedDishes: 1, dislikedDishes: 1 } },
+      );
+      console.log(
+        `[RestaurantMenu._getRecommendation] User data fetched:`,
+        userData, // This will show null if not found
       );
 
       if (!userData) {
@@ -255,25 +261,29 @@ export default class RestaurantMenuConcept {
         }];
       }
 
-      // Constructing preferences from likedDishes and dislikedDishes (for the LLM prompt)
+      // 🐛 FIX: Constructing preferences from likedDishes and dislikedDishes
       const preferences: Record<string, number> = {};
       if (userData.likedDishes) {
         userData.likedDishes.forEach((dish) => {
-          preferences[`Likes: ${dish}`] = 5;
+          preferences[`Likes: ${dish}`] = 5; // Assign a high score for liked dishes
         });
       }
       if (userData.dislikedDishes) {
         userData.dislikedDishes.forEach((dish) => {
-          preferences[`Dislikes: ${dish}`] = 1; 
+          preferences[`Dislikes: ${dish}`] = 1; // Assign a low score for disliked dishes
         });
       }
 
+      // --- Original FIX START (now adapted for the new preferences structure) ---
       if (Object.keys(preferences).length === 0) {
-       // return first menu item if no preferences 
+        console.log(
+          `[RestaurantMenu._getRecommendation] User '${user}' has no defined liked/disliked dishes. Returning first menu item as generic recommendation.`,
+        );
         return [{ recommendation: menu[0].name }];
       }
+      // --- Original FIX END ---
 
-      // Construct prompt with user preferences
+      // Step 3: Construct prompt with user preferences
       const preferencesText = Object.entries(preferences)
         .map(([trait, score]) => `${trait}: ${score}/5`)
         .join("\n");
@@ -295,12 +305,17 @@ From the above menu, choose ONE dish that best matches the user's preferences.
 Respond only in JSON format:
 {"recommendation": "<exact dish name>"}
 `.trim();
+
+      // Step 4: Call Gemini
       const apiKey = Deno.env.get("GEMINI_API_KEY");
       if (!apiKey) {
         return [{ error: "Missing GEMINI_API_KEY environment variable." }];
       }
 
       const llm = new GeminiLLM({ apiKey });
+      console.log(
+        `[RestaurantMenu._getRecommendation] Calling LLM with prompt for user '${user}'...`,
+      );
       const llmResponse = await llm.executeLLM(prompt);
       console.log(
         `[RestaurantMenu._getRecommendation] LLM raw response: ${
@@ -320,7 +335,7 @@ Respond only in JSON format:
         return [{ error: "LLM did not return a valid recommendation." }];
       }
 
-      // Verify dish is on menu
+      // Step 5: Verify dish is on menu
       const match = menu.find(
         (dish) => dish.name.toLowerCase() === recommendation.toLowerCase(),
       );
@@ -330,6 +345,10 @@ Respond only in JSON format:
           error: `The recommended dish '${recommendation}' is not on the menu.`,
         }];
       }
+
+      console.log(
+        `[RestaurantMenu._getRecommendation] Recommended dish for user '${user}': ${match.name}`,
+      );
       return [{ recommendation: match.name }];
     } catch (err) {
       console.error("[RestaurantMenu._getRecommendation] Error:", err);
@@ -337,3 +356,5 @@ Respond only in JSON format:
     }
   }
 }
+
+```

@@ -1,8 +1,8 @@
-[@concept-design-overview](../../background/concept-design-overview.md)
-
-[@concept-specifications](../../background/concept-specifications.md)
-
-[@restaurant-menu-implementation](../../../src/concepts/RestaurantMenu/RestaurantMenuConcept.ts)
+---
+timestamp: 'Tue Oct 21 2025 21:22:57 GMT-0400 (Eastern Daylight Time)'
+parent: '[[../20251021_212257.49d44239.md]]'
+content_id: 60010347f5c85ea439ad973a5293b68a58f45494823b1fac90c710e0a48a223c
+---
 
 # concept: RestaurantMenu
 

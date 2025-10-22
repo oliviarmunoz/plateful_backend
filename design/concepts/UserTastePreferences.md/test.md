@@ -2,8 +2,6 @@
 
 [@testing-concepts](../../background/testing-concepts.md)
 
-[@LikertSurvery-testing](../LikertSurvey/testing.md)
-
 [@testing-file](../../../src/concepts/UserTastePreferencesConcept/UserTastePreferencesConcept.test.ts)
 
 # fix the test error:  Action: addLikedDish - new user, existing user, existing disliked dish error: TypeError: Cannot use 'in' operator to search for 'error' in undefined

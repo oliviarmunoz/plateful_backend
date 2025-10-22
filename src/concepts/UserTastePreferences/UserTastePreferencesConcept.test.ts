@@ -3,13 +3,50 @@ import { testDb } from "@utils/database.ts";
 import { ID } from "@utils/types.ts";
 import UserTastePreferencesConcept from "./UserTastePreferencesConcept.ts";
 
-// Define mock IDs for testing
+/**
+ * concept UserTastePreferences [User, Dish]
+
+  purpose enable users to mark dishes as liked or disliked to build a profile of their taste preferences
+
+  principle when a user adds a dish to their liked list, that preference is recorded, influencing future recommendations
+
+  state
+    a set of Users with
+      a set of likedDishes Dish
+      a set of dislikedDishes Dish
+
+  actions
+    addLikedDish (user: User, dish: Dish)
+      requires:
+      effects: add dish to likedDishes for user. If user record does not exist, create it first with empty lists. If dish was previously in dislikedDishes, it is removed from there.
+
+    removeLikedDish (user: User, dish: Dish)
+      requires: user exists, dish exists, dish is in likedDishes for user
+      effects: remove dish from likedDishes for user
+
+    addDislikedDish (user: User, dish: Dish)
+      requires:
+      effects: add dish to dislikedDishes for user. If user record does not exist, create it first with empty lists. If dish was previously in likedDishes, it is removed from there.
+
+    removeDislikedDish (user: User, dish: Dish)
+      requires: user exists, dish exists, dish is in dislikedDishes for user
+      effects: remove dish from dislikedDishes for user
+
+  queries
+    _getLikedDishes (user: User): (dishes: set(Dish))
+      requires: user exists
+      effects: returns all dishes liked by the specified user
+
+    _getDislikedDishes (user: User): (dishes: set(Dish))
+      requires: user exists
+      effects: returns all dishes disliked by the specified user
+ */
+
 const userA = "user:Alice" as ID;
 const userB = "user:Bob" as ID;
 const dish1 = "dish:Pasta" as ID;
 const dish2 = "dish:Salad" as ID;
 const dish3 = "dish:Sushi" as ID;
-const dish4 = "dish:Pizza" as ID;
 
 Deno.test("Principle: User preferences are recorded and updated, influencing recommendations (via internal state)", async () => {
   const [db, client] = await testDb();
@@ -33,7 +70,6 @@ Deno.test("Principle: User preferences are recorded and updated, influencing rec
 
     console.log(`Query: Get liked dishes for ${userA}.`);
     let likedDishesQueryResult = await concept._getLikedDishes({ user: userA });
-    // Robust check for no error: if array is not empty, ensure no error object.
     assertNotEquals(
       likedDishesQueryResult.length > 0 && "error" in likedDishesQueryResult[0],
       true,
@@ -59,7 +95,6 @@ Deno.test("Principle: User preferences are recorded and updated, influencing rec
 
     console.log(`Query: Get liked dishes for ${userA}.`);
     likedDishesQueryResult = await concept._getLikedDishes({ user: userA });
-    // Robust check for no error
     assertNotEquals(
       likedDishesQueryResult.length > 0 && "error" in likedDishesQueryResult[0],
       true,
@@ -87,7 +122,6 @@ Deno.test("Principle: User preferences are recorded and updated, influencing rec
 
     console.log(`Query: Get liked dishes for ${userA}.`);
     likedDishesQueryResult = await concept._getLikedDishes({ user: userA });
-    // Robust check for no error
     assertNotEquals(
       likedDishesQueryResult.length > 0 && "error" in likedDishesQueryResult[0],
       true,
@@ -101,16 +135,16 @@ Deno.test("Principle: User preferences are recorded and updated, influencing rec
     );
 
     console.log(`Query: Get disliked dishes for ${userA}.`);
-    let dislikedDishesQueryResult = await concept._getDislikedDishes({
+    const dislikedDishesQueryResult = await concept._getDislikedDishes({
       user: userA,
     });
-    // Robust check for no error
     assertNotEquals(
-      dislikedDishesQueryResult.length > 0 && "error" in dislikedDishesQueryResult[0],
+      dislikedDishesQueryResult.length > 0 &&
+        "error" in dislikedDishesQueryResult[0],
       true,
       "Query for disliked dishes should not return an error.",
     );
-    let dislikedDishes = dislikedDishesQueryResult as { dishes: ID }[];
+    const dislikedDishes = dislikedDishesQueryResult as { dishes: ID }[];
     assertEquals(
       dislikedDishes.map((d) => d.dishes),
       [dish1],
@@ -132,7 +166,7 @@ Deno.test("Action: addLikedDish - new user, existing user, existing disliked dis
   try {
     console.log("--- addLikedDish Test ---");
 
-    // Test 1: Add a liked dish for a new user
+    // Add a liked dish for a new user
     console.log(`Action: ${userA} adds ${dish1} as liked (new user).`);
     let result = await concept.addLikedDish({ user: userA, dish: dish1 });
     assertEquals(
@@ -141,7 +175,6 @@ Deno.test("Action: addLikedDish - new user, existing user, existing disliked dis
       "addLikedDish for a new user should succeed.",
     );
     let likedQueryResult = await concept._getLikedDishes({ user: userA });
-    // Robust check for no error
     assertNotEquals(
       likedQueryResult.length > 0 && "error" in likedQueryResult[0],
       true,
@@ -154,7 +187,7 @@ Deno.test("Action: addLikedDish - new user, existing user, existing disliked dis
       `${userA} should have ${dish1} liked.`,
     );
 
-    // Test 2: Add another liked dish for the same user
+    // Add another liked dish for the same user
     console.log(`Action: ${userA} adds ${dish2} as liked (existing user).`);
     result = await concept.addLikedDish({ user: userA, dish: dish2 });
     assertEquals(
@@ -163,7 +196,6 @@ Deno.test("Action: addLikedDish - new user, existing user, existing disliked dis
       "addLikedDish for an existing user should succeed.",
     );
     likedQueryResult = await concept._getLikedDishes({ user: userA });
-    // Robust check for no error
     assertNotEquals(
       likedQueryResult.length > 0 && "error" in likedQueryResult[0],
       true,
@@ -176,13 +208,12 @@ Deno.test("Action: addLikedDish - new user, existing user, existing disliked dis
       `${userA} should have ${dish1}, ${dish2} liked.`,
     );
 
-    // Test 3: Add a dish that was previously disliked (should move)
+    // Add a dish that was previously disliked (should move)
     console.log(`Action: ${userB} adds ${dish3} as disliked.`);
     await concept.addDislikedDish({ user: userB, dish: dish3 });
     let dislikedQueryResultB = await concept._getDislikedDishes({
       user: userB,
     });
-    // Robust check for no error
     assertNotEquals(
       dislikedQueryResultB.length > 0 && "error" in dislikedQueryResultB[0],
       true,
@@ -202,21 +233,19 @@ Deno.test("Action: addLikedDish - new user, existing user, existing disliked dis
       false,
       "addLikedDish should succeed when moving from disliked.",
     );
-    let likedQueryResultB = await concept._getLikedDishes({ user: userB });
-    // Robust check for no error
+    const likedQueryResultB = await concept._getLikedDishes({ user: userB });
     assertNotEquals(
       likedQueryResultB.length > 0 && "error" in likedQueryResultB[0],
       true,
       "Query for liked dishes should not return an error.",
     );
-    let likedB = likedQueryResultB as { dishes: ID }[];
+    const likedB = likedQueryResultB as { dishes: ID }[];
     assertEquals(
       likedB.map((d) => d.dishes),
       [dish3],
       `${userB} should now have ${dish3} liked.`,
     );
     dislikedQueryResultB = await concept._getDislikedDishes({ user: userB });
-    // Robust check for no error
     assertNotEquals(
       dislikedQueryResultB.length > 0 && "error" in dislikedQueryResultB[0],
       true,
@@ -229,7 +258,7 @@ Deno.test("Action: addLikedDish - new user, existing user, existing disliked dis
       `${userB} should no longer have ${dish3} disliked.`,
     );
 
-    // Test 4: Add a dish already liked (should not duplicate)
+    // Add a dish already liked (should not duplicate)
     console.log(
       `Action: ${userA} adds ${dish1} as liked again (already liked).`,
     );
@@ -240,7 +269,6 @@ Deno.test("Action: addLikedDish - new user, existing user, existing disliked dis
       "addLikedDish for already liked dish should succeed (no-op).",
     );
     likedQueryResult = await concept._getLikedDishes({ user: userA });
-    // Robust check for no error
     assertNotEquals(
       likedQueryResult.length > 0 && "error" in likedQueryResult[0],
       true,
@@ -264,11 +292,10 @@ Deno.test("Action: removeLikedDish - existing, non-existent dish, non-existent u
   try {
     console.log("--- removeLikedDish Test ---");
 
-    // Setup: UserA likes dish1 and dish2
+    // UserA likes dish1 and dish2
     await concept.addLikedDish({ user: userA, dish: dish1 });
     await concept.addLikedDish({ user: userA, dish: dish2 });
     let likedQueryResult = await concept._getLikedDishes({ user: userA });
-    // Robust check for no error
     assertNotEquals(
       likedQueryResult.length > 0 && "error" in likedQueryResult[0],
       true,
@@ -281,7 +308,7 @@ Deno.test("Action: removeLikedDish - existing, non-existent dish, non-existent u
       "Setup: UserA should have dish1 and dish2 liked.",
     );
 
-    // Test 1: Remove an existing liked dish
+    // Remove an existing liked dish
     console.log(`Action: ${userA} removes ${dish1} from liked.`);
     let result = await concept.removeLikedDish({ user: userA, dish: dish1 });
     assertEquals(
@@ -290,7 +317,6 @@ Deno.test("Action: removeLikedDish - existing, non-existent dish, non-existent u
       "removeLikedDish for existing dish should succeed.",
     );
     likedQueryResult = await concept._getLikedDishes({ user: userA });
-    // Robust check for no error
     assertNotEquals(
       likedQueryResult.length > 0 && "error" in likedQueryResult[0],
       true,
@@ -303,7 +329,7 @@ Deno.test("Action: removeLikedDish - existing, non-existent dish, non-existent u
       `${userA} should only have ${dish2} liked.`,
     );
 
-    // Test 2: Attempt to remove a dish not liked by the user
+    // Attempt to remove a dish not liked by the user
     console.log(`Action: ${userA} removes ${dish3} from liked (not liked).`);
     result = await concept.removeLikedDish({ user: userA, dish: dish3 });
     assertEquals(
@@ -316,7 +342,7 @@ Deno.test("Action: removeLikedDish - existing, non-existent dish, non-existent u
       `Dish '${dish3}' is not in the liked dishes for user '${userA}'.`,
     );
 
-    // Test 3: Attempt to remove for a non-existent user
+    // Attempt to remove for a non-existent user
     const nonExistentUser = "user:NonExistent" as ID;
     console.log(
       `Action: ${nonExistentUser} removes ${dish1} from liked (non-existent user).`,
@@ -346,7 +372,7 @@ Deno.test("Action: addDislikedDish - new user, existing user, existing liked dis
   try {
     console.log("--- addDislikedDish Test ---");
 
-    // Test 1: Add a disliked dish for a new user
+    // Add a disliked dish for a new user
     console.log(`Action: ${userA} adds ${dish1} as disliked (new user).`);
     let result = await concept.addDislikedDish({ user: userA, dish: dish1 });
     assertEquals(
@@ -355,7 +381,6 @@ Deno.test("Action: addDislikedDish - new user, existing user, existing liked dis
       "addDislikedDish for a new user should succeed.",
     );
     let dislikedQueryResult = await concept._getDislikedDishes({ user: userA });
-    // Robust check for no error
     assertNotEquals(
       dislikedQueryResult.length > 0 && "error" in dislikedQueryResult[0],
       true,
@@ -368,7 +393,7 @@ Deno.test("Action: addDislikedDish - new user, existing user, existing liked dis
       `${userA} should have ${dish1} disliked.`,
     );
 
-    // Test 2: Add another disliked dish for the same user
+    // Add another disliked dish for the same user
     console.log(`Action: ${userA} adds ${dish2} as disliked (existing user).`);
     result = await concept.addDislikedDish({ user: userA, dish: dish2 });
     assertEquals(
@@ -377,7 +402,6 @@ Deno.test("Action: addDislikedDish - new user, existing user, existing liked dis
       "addDislikedDish for an existing user should succeed.",
     );
     dislikedQueryResult = await concept._getDislikedDishes({ user: userA });
-    // Robust check for no error
     assertNotEquals(
       dislikedQueryResult.length > 0 && "error" in dislikedQueryResult[0],
       true,
@@ -390,11 +414,10 @@ Deno.test("Action: addDislikedDish - new user, existing user, existing liked dis
       `${userA} should have ${dish1}, ${dish2} disliked.`,
     );
 
-    // Test 3: Add a dish that was previously liked (should move)
+    // Add a dish that was previously liked (should move)
     console.log(`Action: ${userB} adds ${dish3} as liked.`);
     await concept.addLikedDish({ user: userB, dish: dish3 });
     let likedQueryResultB = await concept._getLikedDishes({ user: userB });
-    // Robust check for no error
     assertNotEquals(
       likedQueryResultB.length > 0 && "error" in likedQueryResultB[0],
       true,
@@ -414,23 +437,21 @@ Deno.test("Action: addDislikedDish - new user, existing user, existing liked dis
       false,
       "addDislikedDish should succeed when moving from liked.",
     );
-    let dislikedQueryResultB = await concept._getDislikedDishes({
+    const dislikedQueryResultB = await concept._getDislikedDishes({
       user: userB,
     });
-    // Robust check for no error
     assertNotEquals(
       dislikedQueryResultB.length > 0 && "error" in dislikedQueryResultB[0],
       true,
       "Query for disliked dishes should not return an error.",
     );
-    let dislikedB = dislikedQueryResultB as { dishes: ID }[];
+    const dislikedB = dislikedQueryResultB as { dishes: ID }[];
     assertEquals(
       dislikedB.map((d) => d.dishes),
       [dish3],
       `${userB} should now have ${dish3} disliked.`,
     );
     likedQueryResultB = await concept._getLikedDishes({ user: userB });
-    // Robust check for no error
     assertNotEquals(
       likedQueryResultB.length > 0 && "error" in likedQueryResultB[0],
       true,
@@ -443,7 +464,7 @@ Deno.test("Action: addDislikedDish - new user, existing user, existing liked dis
       `${userB} should no longer have ${dish3} liked.`,
     );
 
-    // Test 4: Add a dish already disliked (should not duplicate)
+    // Add a dish already disliked (should not duplicate)
     console.log(
       `Action: ${userA} adds ${dish1} as disliked again (already disliked).`,
     );
@@ -454,7 +475,6 @@ Deno.test("Action: addDislikedDish - new user, existing user, existing liked dis
       "addDislikedDish for already disliked dish should succeed (no-op).",
     );
     dislikedQueryResult = await concept._getDislikedDishes({ user: userA });
-    // Robust check for no error
     assertNotEquals(
       dislikedQueryResult.length > 0 && "error" in dislikedQueryResult[0],
       true,
@@ -478,11 +498,10 @@ Deno.test("Action: removeDislikedDish - existing, non-existent dish, non-existen
   try {
     console.log("--- removeDislikedDish Test ---");
 
-    // Setup: UserA dislikes dish1 and dish2
+    // UserA dislikes dish1 and dish2
     await concept.addDislikedDish({ user: userA, dish: dish1 });
     await concept.addDislikedDish({ user: userA, dish: dish2 });
     let dislikedQueryResult = await concept._getDislikedDishes({ user: userA });
-    // Robust check for no error
     assertNotEquals(
       dislikedQueryResult.length > 0 && "error" in dislikedQueryResult[0],
       true,
@@ -495,7 +514,7 @@ Deno.test("Action: removeDislikedDish - existing, non-existent dish, non-existen
       "Setup: UserA should have dish1 and dish2 disliked.",
     );
 
-    // Test 1: Remove an existing disliked dish
+    // Remove an existing disliked dish
     console.log(`Action: ${userA} removes ${dish1} from disliked.`);
     let result = await concept.removeDislikedDish({ user: userA, dish: dish1 });
     assertEquals(
@@ -504,7 +523,6 @@ Deno.test("Action: removeDislikedDish - existing, non-existent dish, non-existen
       "removeDislikedDish for existing dish should succeed.",
     );
     dislikedQueryResult = await concept._getDislikedDishes({ user: userA });
-    // Robust check for no error
     assertNotEquals(
       dislikedQueryResult.length > 0 && "error" in dislikedQueryResult[0],
       true,
@@ -517,7 +535,7 @@ Deno.test("Action: removeDislikedDish - existing, non-existent dish, non-existen
       `${userA} should only have ${dish2} disliked.`,
     );
 
-    // Test 2: Attempt to remove a dish not disliked by the user
+    // Attempt to remove a dish not disliked by the user
     console.log(
       `Action: ${userA} removes ${dish3} from disliked (not disliked).`,
     );
@@ -532,7 +550,7 @@ Deno.test("Action: removeDislikedDish - existing, non-existent dish, non-existen
       `Dish '${dish3}' is not in the disliked dishes for user '${userA}'.`,
     );
 
-    // Test 3: Attempt to remove for a non-existent user
+    // Attempt to remove for a non-existent user
     const nonExistentUser = "user:NonExistent" as ID;
     console.log(
       `Action: ${nonExistentUser} removes ${dish1} from disliked (non-existent user).`,
@@ -562,48 +580,36 @@ Deno.test("Query: _getLikedDishes - existing user with dishes, existing user no 
   try {
     console.log("--- _getLikedDishes Test ---");
 
-    // Setup: UserA likes dish1, UserB has no preferences
+    // UserA likes dish1, UserB has no preferences
     await concept.addLikedDish({ user: userA, dish: dish1 });
 
-    // Test 1: Existing user with liked dishes
+    // Existing user with liked dishes
     console.log(`Query: Get liked dishes for ${userA}.`);
     let likedQueryResult = await concept._getLikedDishes({ user: userA });
-    // Robust check for no error
     assertNotEquals(
       likedQueryResult.length > 0 && "error" in likedQueryResult[0],
       true,
       "Query for liked dishes should not return an error.",
     );
-    let liked = likedQueryResult as { dishes: ID }[];
+    const liked = likedQueryResult as { dishes: ID }[];
     assertEquals(
       liked.map((d) => d.dishes),
       [dish1],
       `Should return ${dish1} for ${userA}.`,
     );
 
-    // Test 2: Existing user with no liked dishes (only disliked)
+    // Existing user with no liked dishes (only disliked)
     console.log(`Action: ${userA} dislikes ${dish2}.`);
     await concept.addDislikedDish({ user: userA, dish: dish2 });
     console.log(`Action: ${userA} removes ${dish1} from liked.`);
     await concept.removeLikedDish({ user: userA, dish: dish1 });
     console.log(`Query: Get liked dishes for ${userA} (now empty).`);
     likedQueryResult = await concept._getLikedDishes({ user: userA });
-    // This case expects an empty array directly, so the previous check is okay.
     assertEquals(
       likedQueryResult,
       [],
       `Should return an empty array for ${userA} after removing liked dishes.`,
     );
-
-    // Test 3: Non-existent user
-    const nonExistentUser = "user:Ghost" as ID;
-    console.log(
-      `Query: Get liked dishes for ${nonExistentUser} (non-existent).`,
-    );
-    likedQueryResult = await concept._getLikedDishes({ user: nonExistentUser });
-    assertEquals(likedQueryResult, [{
-      error: `User with ID '${nonExistentUser}' does not exist.`,
-    }], `Should return error for non-existent user.`);
   } finally {
     await client.close();
   }
@@ -616,10 +622,10 @@ Deno.test("Query: _getDislikedDishes - existing user with dishes, existing user 
   try {
     console.log("--- _getDislikedDishes Test ---");
 
-    // Setup: UserA dislikes dish1, UserB has no preferences
+    // UserA dislikes dish1, UserB has no preferences
     await concept.addDislikedDish({ user: userA, dish: dish1 });
 
-    // Test 1: Existing user with disliked dishes
+    // Existing user with disliked dishes
     console.log(`Query: Get disliked dishes for ${userA}.`);
     let dislikedQueryResult = await concept._getDislikedDishes({ user: userA });
     // Robust check for no error
@@ -628,28 +634,27 @@ Deno.test("Query: _getDislikedDishes - existing user with dishes, existing user 
       true,
       "Query for disliked dishes should not return an error.",
     );
-    let disliked = dislikedQueryResult as { dishes: ID }[];
+    const disliked = dislikedQueryResult as { dishes: ID }[];
     assertEquals(
       disliked.map((d) => d.dishes),
       [dish1],
       `Should return ${dish1} for ${userA}.`,
     );
 
-    // Test 2: Existing user with no disliked dishes (only liked)
+    // Existing user with no disliked dishes (only liked)
     console.log(`Action: ${userA} likes ${dish2}.`);
     await concept.addLikedDish({ user: userA, dish: dish2 });
     console.log(`Action: ${userA} removes ${dish1} from disliked.`);
     await concept.removeDislikedDish({ user: userA, dish: dish1 });
     console.log(`Query: Get disliked dishes for ${userA} (now empty).`);
     dislikedQueryResult = await concept._getDislikedDishes({ user: userA });
-    // This case expects an empty array directly, so the previous check is okay.
     assertEquals(
       dislikedQueryResult,
       [],
       `Should return an empty array for ${userA} after removing disliked dishes.`,
     );
 
-    // Test 3: Non-existent user
+    // Non-existent user
     const nonExistentUser = "user:Phantom" as ID;
     console.log(
       `Query: Get disliked dishes for ${nonExistentUser} (non-existent).`,

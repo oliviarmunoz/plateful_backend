@@ -1,14 +1,8 @@
-[@concept-design-overview](../../background/concept-design-overview.md)
-
-[@concept-specifications](../../background/concept-specifications.md)
-
-[@application-pitch](../../brainstorming/conceptpitch.md)
-
-[@RestaurantMenu](RestaurantMenu.md)
-
-[@UserAuthentication-example](../UserAuthentication/implementation.md)
-
-# implement RestaurantMenu
+---
+timestamp: 'Tue Oct 21 2025 21:22:57 GMT-0400 (Eastern Daylight Time)'
+parent: '[[../20251021_212257.49d44239.md]]'
+content_id: abf497f22d716684f3193bee433352a8a67bfdeb36a27e1801d2ced307aa3fec
+---
 
 # response:
 

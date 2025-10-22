@@ -41,8 +41,7 @@ actions
   /_getFeedback (author: User, item: Item): (feedback: Feedback)
     requires: feedback for this item from this user exists
     effects: returns the feedback from this user for this item
-
- */
+*/
 
 const PREFIX = "Feedback" + ".";
 
@@ -77,17 +76,17 @@ export default class FeedbackConcept {
   /**
    * Action: submit Feedback for a given item from a given author
    *
-   * @requires item doesn't already have feedback from this user, rating is between 0-5
+   * @requires rating is between 0-5
    *
-   * @effects creates and returns a new Feedback, associating the author, item, and rating
+   * @effects creates and returns a new Feedback, associating the author, item, and rating (or updates it if it already exists)
    *          If requirements are not met, returns an error message
    */
   async submitFeedback(
     { author, item, rating }: { author: User; item: Item; rating: number },
   ): Promise<{ feedback: Feedback } | { error: string }> {
-    // rating is between 0-5
+    // check rating is between 0-5
     if (rating < 0 || rating > 5) {
-      return { error: "Rating must be an integer between 1 and 5." };
+      return { error: "Rating must be an integer between 0 and 5." };
     }
 
     // item doesn't already have feedback from this user
@@ -96,9 +95,7 @@ export default class FeedbackConcept {
       target: item,
     });
     if (existingFeedback) {
-      return {
-        error: `Feedback for item ${item} from user ${author} already exists.`,
-      };
+      return await this.updateFeedback({ author, item, newRating: rating });
     }
 
     // Create a new Feedback
@@ -114,7 +111,6 @@ export default class FeedbackConcept {
       await this.feedbacks.insertOne(newFeedback);
       return { feedback: newFeedbackId };
     } catch (e) {
-      console.error("Error submitting feedback:", e);
       return { error: "Failed to submit feedback due to a database error." };
     }
   }
@@ -134,12 +130,12 @@ export default class FeedbackConcept {
       newRating: number;
     },
   ): Promise<{ feedback: Feedback } | { error: string }> {
-    // newRating is between 0-5
+    // check newRating is between 0-5
     if (newRating < 0 || newRating > 5) {
-      return { error: "New rating must be an integer between 1 and 5." };
+      return { error: "New rating must be an integer between 0 and 5." };
     }
 
-    // feedback for this item from this user exists
+    // check that feedback for this item from this user exists
     const existingFeedback = await this.feedbacks.findOne({
       author,
       target: item,
@@ -159,7 +155,6 @@ export default class FeedbackConcept {
       );
       return { feedback: existingFeedback._id };
     } catch (e) {
-      console.error("Error updating feedback:", e);
       return { error: "Failed to update feedback due to a database error." };
     }
   }
@@ -174,7 +169,7 @@ export default class FeedbackConcept {
   async deleteFeedback(
     { author, item }: { author: User; item: Item },
   ): Promise<{ successful: boolean } | { error: string }> {
-    // feedback for this item from this user exists
+    // check that feedback for this item from this user exists
     const existingFeedback = await this.feedbacks.findOne({
       author,
       target: item,
@@ -194,7 +189,7 @@ export default class FeedbackConcept {
     if (result.deletedCount === 1) {
       return { successful: true };
     } else {
-      return { successful: false };
+      return { successful: false, error: "Failed to delete feedback." };
     }
   }
 

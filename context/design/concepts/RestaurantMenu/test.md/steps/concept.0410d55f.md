@@ -1,10 +1,12 @@
-[@concept-design-overview](../../background/concept-design-overview.md)
+---
+timestamp: 'Tue Oct 21 2025 21:22:57 GMT-0400 (Eastern Daylight Time)'
+parent: '[[../20251021_212257.49d44239.md]]'
+content_id: 0410d55fd60d6e370a7ec69f20169738a6167d29501b90386d98a6490550dd52
+---
 
-[@concept-specifications](../../background/concept-specifications.md)
+# concept: UserAuthentication \[User]
 
-# concept: UserAuthentication [User]
-
-``` markdown
+```markdown
   concept UserAuthentication [User]
   purpose limit access to known users
   principle if a user registers with a unique username and password, they can later log in using those

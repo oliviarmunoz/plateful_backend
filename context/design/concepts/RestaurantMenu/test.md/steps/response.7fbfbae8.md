@@ -1,11 +1,9 @@
-[@implementation](implementation.md)
-[@test](../../../src/concepts/RestaurantMenu/RestaurantMenuConcept.test.ts)
+---
+timestamp: 'Tue Oct 21 2025 21:26:07 GMT-0400 (Eastern Daylight Time)'
+parent: '[[../20251021_212607.a9ec2662.md]]'
+content_id: 7fbfbae8d535c3567dd3e7672480245dc0782f72f0092c3d8e2c5b9f9323f78a
+---
 
-[@test-example](../../../src/concepts/Feedback/FeedbackConcept.test.ts)
-
-[@testing-concepts](../../background/testing-concepts.md)
-
-# add some tests to verify the recommendation action works? use the feedback one as an example
 # response:
 
 Here are the additional tests for the `_getRecommendation` action in the `RestaurantMenuConcept`, placed in a new test file `src/concepts/RestaurantMenu/RestaurantMenuConcept.test.ts`.
