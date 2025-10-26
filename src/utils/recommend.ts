@@ -2,7 +2,7 @@
  * Recommend Concept - AI Augmented Version
  */
 
-import { GeminiLLM } from './gemini-llm'
+import { GeminiLLM } from './gemini-llm.ts'
 
 export interface Candidate {
   name: string
@@ -84,7 +84,8 @@ ${this.getReadableCandidates()}
 
 Return your response **only** as a valid JSON object with this structure:
 {
-  "recommendation": { "dishName": "exact dish title from the list above" }
+  "recommendation": { "dishName": "exact dish title from the list above" },
+  "explanation": {"explanation": "reasoning"}
 }
 `
   }

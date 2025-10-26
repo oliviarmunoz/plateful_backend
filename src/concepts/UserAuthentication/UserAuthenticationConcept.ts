@@ -75,7 +75,7 @@ export default class UserAuthenticationConcept {
     // Check if username already exists
     const existingUser = await this.users.findOne({ username });
     if (existingUser) {
-      return { error: "Username already taken." };
+      return { error: "Username already exists." };
     }
 
     const newUser: AuthUser = {
