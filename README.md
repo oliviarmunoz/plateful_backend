@@ -1,5 +1,7 @@
 # Back-end Repo for Plateful
 
+- [Design Changes](./design-changes.md)
+
 ## Application Pitch
 
 Name: Plateful

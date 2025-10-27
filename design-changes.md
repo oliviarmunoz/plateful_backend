@@ -1,0 +1,3 @@
+# Design Changes
+
+When implementing Plateful, I learned that my original concepts were not robust enough for what I wanted to implement. There were a couple small scenarios where I had to go back and update some of the endpoints. For example, I had to change the return types of some of the responses, raise errors, and add new queries. The biggest change that I had was to the `RestaurantMenu` concept. I integrated the LLM to this concept in the form of `getRecommendation`. I first wanted to implement this as its own separate concept, but I decided that it would make the most sense as a sync. This allowed me to use the existing RestaurantMenu concept and the existing skeleton code I generated from assignment 3 to implement this concept. 
