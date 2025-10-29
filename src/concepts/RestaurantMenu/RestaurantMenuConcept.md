@@ -1,82 +1,142 @@
 # Console Output for RestaurantMenuConcept Tests
 
 ```
-running 7 tests from ./src/concepts/RestaurantMenu/RestaurantMenuConcept.test.ts
+running 13 tests from ./src/concepts/RestaurantMenu/RestaurantMenuConcept.test.ts
+Principle Test: Up-to-date and accurate menu ...
+------- output -------
+Adding initial menu items for Restaurant...
+Successfully added menu items.
+Viewing menu items...
+Menu viewed successfully.
+Adding a new menu item...
+Successfully added new menu item.
+Removing menu item...
+Successfully removed menu item. 
+Viewing updated menu...
+Successfully viewed (correct) menu.
+----- output end -----
+Principle Test: Up-to-date and accurate menu ... ok (3s)
+Action: addMenuItem - Success and Failure ...
+------- output -------
+Adding menu item...
+Successfully added: 019a2d9b-a60f-77da-9a38-cb2c31b76a9c
+Viewing new menu...
+Successfully viewed (correct) menu.
+Adding the same menu item...
+Successfully threw error message.
+----- output end -----
+Action: addMenuItem - Success and Failure ... ok (610ms)
+Action: updateMenuItem - Success and Failure ...
+------- output -------
+Adding menu item...
+Added Pepperoni Pizza for update testing: 019a2d9b-a8ee-7dd8-926c-a1a7b6bd3fc7
+Updating menu item...
+Successfully updated menu item.
+Viewing menu item...
+Successfully viewed (correct) menu.
+Adding menu item...
+Attempting to update non-existent menu item 'menuItem:nonexistent'...
+Successfully returned menu item.
+----- output end -----
+Action: updateMenuItem - Success and Failure ... ok (886ms)
+Action: removeMenuItem - Success and Failure ...
+------- output -------
+Adding menu item...
+Added Veggie Pizza for removal testing: 019a2d9b-ac9a-7988-9e89-6ec4fde39ab9
+Removing menu item...
+Successfully removed menu item.
+Adding menu item...
+Attempting to remove non-existent menu item 'menuItem:nonexistent2'...
+Successfully threw error.
+----- output end -----
+Action: removeMenuItem - Success and Failure ... ok (863ms)
+Query: _getMenuItems ...
+------- output -------
+Adding menu items...
+Successfully added menu items.
+Getting menu items...
+Successfully retrieved all menu items.
+Getting menu items...
+Retrieving menu items for non-existent restaurant 'restaurant:Imaginary'...
+Successfully threw error.
+----- output end -----
+Query: _getMenuItems ... ok (718ms)
+Query: _getMenuItemDetails ...
+------- output -------
+Adding menu item...
+Getting menu item details...
+Successfully returned details for the menu item.
+Getting menu item details...
+Retrieving details for non-existent menu item 'menuItem:fakeSalad'...
+Successfully threw error.
+----- output end -----
+Query: _getMenuItemDetails ... ok (682ms)
 Query _getRecommendation: Fallback to first item when no user preferences ...
 ------- output -------
-Setting up restaurant 019a0989-4e3e-7620-b1ff-1e50046f6605 with menu items.
-Setting up user 019a0989-4e3e-7c63-8a2d-8e98c8331666 without preferences.
+Setting up restaurant 019a2d9b-b788-7ae9-9983-70a8610c0052 with menu items.
+Setting up user 019a2d9b-b789-7e85-b2f3-f233eba461b4 without preferences.
 Querying recommendation for user with no preferences (should return first item)...
-[RestaurantMenu._getRecommendation] Menu for '019a0989-4e3e-7620-b1ff-1e50046f6605': [ "Pasta Primavera", "Chicken Stir-fry" ]
 Recommendation result: [ { recommendation: "Pasta Primavera" } ]
 ----- output end -----
-Query _getRecommendation: Fallback to first item when no user preferences ... ok (861ms)
+Query _getRecommendation: Fallback to first item when no user preferences ... ok (1s)
 Query _getRecommendation: Successful recommendation with user preferences ...
 ------- output -------
-Setting up restaurant 019a0989-5103-794a-b174-ee898ad39ee1 with menu items.
-Setting up user 019a0989-5103-724a-b0ee-dc123105e14b with preferences.
+Setting up restaurant 019a2d9b-bc99-7247-9ca7-a43334b25f6a with menu items.
+Setting up user 019a2d9b-bc99-729d-a065-7f189ad3e7ca with preferences.
 Querying recommendation for user with preferences (LLM mocked)...
-[RestaurantMenu._getRecommendation] Menu for '019a0989-5103-794a-b174-ee898ad39ee1': [ "Spicy Thai Curry", "Pad See Ew", "Tom Yum Soup" ]
-[RestaurantMenu._getRecommendation] LLM raw response: {"recommendation": "Spicy Thai Curry"}...
 Recommendation result: [ { recommendation: "Spicy Thai Curry" } ]
 ----- output end -----
-Query _getRecommendation: Successful recommendation with user preferences ... ok (745ms)
+Query _getRecommendation: Successful recommendation with user preferences ... ok (1s)
 Query _getRecommendation: Error for non-existent restaurant ...
 ------- output -------
-Setting up user 019a0989-53be-782d-bfbf-764ab5258efb with preferences.
+Setting up user 019a2d9b-c074-7e9d-b5a7-3b39066b24ab with preferences.
 Querying recommendation for non-existent restaurant (should error)...
-[RestaurantMenu._getRecommendation] Menu for '019a0989-53be-78ad-8c9a-a9b513d47914': []
 Recommendation result: [
   {
-    error: "No menu items found for restaurant '019a0989-53be-78ad-8c9a-a9b513d47914'."
+    error: "No menu items found for restaurant '019a2d9b-c074-771a-8601-ec9fa8028e3e'."
   }
 ]
 ----- output end -----
-Query _getRecommendation: Error for non-existent restaurant ... ok (532ms)
+Query _getRecommendation: Error for non-existent restaurant ... ok (745ms)
 Query _getRecommendation: Error for non-existent user ...
 ------- output -------
-Setting up restaurant 019a0989-5636-7572-bd62-aa38c35d5668 with menu items.
+Setting up restaurant 019a2d9b-c311-7731-bdb1-833f265d9d66 with menu items.
 Querying recommendation for non-existent user (should error)...
-[RestaurantMenu._getRecommendation] Menu for '019a0989-5636-7572-bd62-aa38c35d5668': [ "Burger" ]
 Recommendation result: [
   {
-    error: "User with ID '019a0989-5636-70e1-a74e-2af706620fec' not found in the UserTastePreferences collection."
+    error: "User with ID '019a2d9b-c311-788d-9ddb-89a3d30a422d' not found in the UserTastePreferences collection."
   }
 ]
 ----- output end -----
-Query _getRecommendation: Error for non-existent user ... ok (681ms)
+Query _getRecommendation: Error for non-existent user ... ok (784ms)
 Query _getRecommendation: Error for restaurant with no menu items ...
 ------- output -------
-Setting up user 019a0989-58c7-7b5f-9bb2-28c24ceccd53 with preferences.
+Setting up user 019a2d9b-c6e0-7ebe-b9c3-d6c309ab4c89 with preferences.
 Querying recommendation for restaurant with no menu items (should error)...
-[RestaurantMenu._getRecommendation] Menu for '019a0989-58c7-7747-8450-b011c1b963c2': []
 Recommendation result: [
   {
-    error: "No menu items found for restaurant '019a0989-58c7-7747-8450-b011c1b963c2'."
+    error: "No menu items found for restaurant '019a2d9b-c6e0-72ae-92ff-1dd6eaa063c4'."
   }
 ]
 ----- output end -----
-Query _getRecommendation: Error for restaurant with no menu items ... ok (597ms)
+Query _getRecommendation: Error for restaurant with no menu items ... ok (859ms)
 Query _getRecommendation: Error when LLM returns invalid JSON ...
 ------- output -------
 Querying recommendation when LLM returns invalid JSON (should error)...
-[RestaurantMenu._getRecommendation] Menu for '019a0989-5b32-7573-abde-85b6e3326489': [ "Valid Dish" ]
-[RestaurantMenu._getRecommendation] LLM raw response: THIS IS NOT JSON...
 Recommendation result: [ { error: "Failed to parse LLM response as JSON." } ]
 ----- output end -----
-Query _getRecommendation: Error when LLM returns invalid JSON ... ok (687ms)
+Query _getRecommendation: Error when LLM returns invalid JSON ... ok (1s)
 Query _getRecommendation: Error when LLM recommendation is not on the menu ...
 ------- output -------
 Querying recommendation when LLM recommends non-existent dish (should error)...
-[RestaurantMenu._getRecommendation] Menu for '019a0989-5e02-76e9-9b55-7c9d505d4619': [ "Existing Dish" ]
-[RestaurantMenu._getRecommendation] LLM raw response: {"recommendation": "NonExistent Dish"}...
 Recommendation result: [
   {
     error: "The recommended dish 'NonExistent Dish' is not on the menu."
   }
 ]
 ----- output end -----
-Query _getRecommendation: Error when LLM recommendation is not on the menu ... ok (734ms)
+Query _getRecommendation: Error when LLM recommendation is not on the menu ... ok (2s)
 
-ok | 7 passed | 0 failed (4s)
+ok | 13 passed | 0 failed (16s)
+
 ```

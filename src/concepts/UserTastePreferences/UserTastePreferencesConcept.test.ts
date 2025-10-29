@@ -21,7 +21,7 @@ import UserTastePreferencesConcept from "./UserTastePreferencesConcept.ts";
       effects: add dish to likedDishes for user. If user record does not exist, create it first with empty lists. If dish was previously in dislikedDishes, it is removed from there.
 
     removeLikedDish (user: User, dish: Dish)
-      requires: user exists, dish exists, dish is in likedDishes for user
+      requires: user exists, dish is in likedDishes for user
       effects: remove dish from likedDishes for user
 
     addDislikedDish (user: User, dish: Dish)
@@ -32,7 +32,6 @@ import UserTastePreferencesConcept from "./UserTastePreferencesConcept.ts";
       requires: user exists, dish exists, dish is in dislikedDishes for user
       effects: remove dish from dislikedDishes for user
 
-  queries
     _getLikedDishes (user: User): (dishes: set(Dish))
       requires: user exists
       effects: returns all dishes liked by the specified user

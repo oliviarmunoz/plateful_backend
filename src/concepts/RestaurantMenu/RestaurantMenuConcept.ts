@@ -6,7 +6,7 @@ import { GeminiLLM } from "@utils/gemini-llm.ts";
 /**
   concept RestaurantMenu [Restaurant, User]
 
-  purpose allow users to reliably view an up-to-date and comprehensive list of a restaurant's dishes, descriptions, and prices to inform their choices, and receive personalized recommendations
+  purpose allow users to reliably view an up-to-date and comprehensive list of a restaurant's dishes to inform their choices and receive personalized recommendations
 
   principle when a restaurant owner adds new dishes or removes unavailable ones, customers can always view an up-to-date menu to get a dish recommendation tailored to their preferences.
 
@@ -177,7 +177,7 @@ export default class RestaurantMenuConcept {
 
   /**
    * Query: Get all menu items for a restaurant (by name)
-   * @requires 
+   * @requires
    * @effects returns a set of all menu items associated with the given restaurant, including their name, description, and price
    */
   async _getMenuItems(
@@ -220,8 +220,8 @@ export default class RestaurantMenuConcept {
   /**
    * Query: Get a dish recommendation for a user at a specific restaurant
    * @requires a restaurant with the given ID exists and has at least one menu item; a user with the given ID exists
-   * @effects returns the name of a menu item from the specified restaurant that is recommended for the user 
-   *          via an LLM, based on their taste preferences and the current menu items. 
+   * @effects returns the name of a menu item from the specified restaurant that is recommended for the user
+   *          via an LLM, based on their taste preferences and the current menu items.
    *          If no specific preferences are found, a generic recommendation may be provided.
    */
   async _getRecommendation(
@@ -230,11 +230,6 @@ export default class RestaurantMenuConcept {
     try {
       // Fetch the restaurant’s menu
       const menu = await this._getMenuItems({ restaurant });
-      console.log(
-        `[RestaurantMenu._getRecommendation] Menu for '${restaurant}':`,
-        menu.map((item) => item.name),
-      );
-
       if (!menu.length) {
         return [{
           error: `No menu items found for restaurant '${restaurant}'.`,
@@ -264,12 +259,12 @@ export default class RestaurantMenuConcept {
       }
       if (userData.dislikedDishes) {
         userData.dislikedDishes.forEach((dish) => {
-          preferences[`Dislikes: ${dish}`] = 1; 
+          preferences[`Dislikes: ${dish}`] = 1;
         });
       }
 
       if (Object.keys(preferences).length === 0) {
-       // return first menu item if no preferences 
+        // return first menu item if no preferences
         return [{ recommendation: menu[0].name }];
       }
 
@@ -302,11 +297,6 @@ Respond only in JSON format:
 
       const llm = new GeminiLLM({ apiKey });
       const llmResponse = await llm.executeLLM(prompt);
-      console.log(
-        `[RestaurantMenu._getRecommendation] LLM raw response: ${
-          llmResponse.substring(0, 100)
-        }...`,
-      );
 
       const jsonMatch = llmResponse.match(/\{[\s\S]*\}/);
       if (!jsonMatch) {
@@ -319,6 +309,8 @@ Respond only in JSON format:
       if (!recommendation) {
         return [{ error: "LLM did not return a valid recommendation." }];
       }
+
+      // VALIDATION
 
       // Verify dish is on menu
       const match = menu.find(

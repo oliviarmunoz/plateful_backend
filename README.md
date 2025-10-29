@@ -14,7 +14,7 @@ Personalized Recommendations: When you search a restaurant, the app suggests a d
 
 User History: See past recommended meals and how you rated them!
 
-Run the back-end using the following script: 
+Run the back-end using the following script:
 `
 deno task concepts
 `

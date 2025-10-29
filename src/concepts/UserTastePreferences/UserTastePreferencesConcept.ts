@@ -19,7 +19,7 @@ import { Empty, ID } from "@utils/types.ts";
       effects: add dish to likedDishes for user. If user record does not exist, create it first with empty lists. If dish was previously in dislikedDishes, it is removed from there.
 
     removeLikedDish (user: User, dish: Dish)
-      requires: user exists, dish exists, dish is in likedDishes for user
+      requires: user exists, dish is in likedDishes for user
       effects: remove dish from likedDishes for user
 
     addDislikedDish (user: User, dish: Dish)
@@ -30,7 +30,6 @@ import { Empty, ID } from "@utils/types.ts";
       requires: user exists, dish exists, dish is in dislikedDishes for user
       effects: remove dish from dislikedDishes for user
 
-  queries
     _getLikedDishes (user: User): (dishes: set(Dish))
       requires: user exists
       effects: returns all dishes liked by the specified user
@@ -42,7 +41,6 @@ import { Empty, ID } from "@utils/types.ts";
 
 const PREFIX = "UserTastePreferences" + ".";
 
-// Generic types for this concept, treated as opaque identifiers.
 type User = ID;
 type Dish = ID;
 
@@ -60,7 +58,7 @@ export default class UserTastePreferencesConcept {
   }
 
   /**
-   * Action: addLikedDish (user: User, dish: Dish): Empty
+   * Action: add Liked Dish
    *
    * @requires
    *
@@ -70,22 +68,20 @@ export default class UserTastePreferencesConcept {
   async addLikedDish(
     { user, dish }: { user: User; dish: Dish },
   ): Promise<Empty | { error: string }> {
-    // MongoDB's $addToSet implicitly handles array creation if it doesn't exist
-    // when used with upsert: true, so $setOnInsert for the same field is redundant and causes conflict.
-    const result = await this.users.findOneAndUpdate(
+    const _result = await this.users.findOneAndUpdate(
       { _id: user },
       {
-        $addToSet: { likedDishes: dish }, // Add dish to likedDishes if not already present
+        $addToSet: { likedDishes: dish },
         $pull: { dislikedDishes: dish }, // Remove dish from dislikedDishes if present
       },
-      { upsert: true, returnDocument: "after" }, // Create document if it doesn't exist
+      { upsert: true, returnDocument: "after" },
     );
 
     return {};
   }
 
   /**
-   * Action: removeLikedDish (user: User, dish: Dish): Empty
+   * Action: remove Liked Dish
    *
    * @requires user exists, dish is in likedDishes for user
    *
@@ -116,13 +112,13 @@ export default class UserTastePreferencesConcept {
       return {};
     } else {
       return {
-        error: "Failed to remove liked dish due to an internal database error.",
+        error: "Failed to remove liked dish.",
       };
     }
   }
 
   /**
-   * Action: addDislikedDish (user: User, dish: Dish): Empty
+   * Action: add Disliked Dish
    *
    * @requires
    *
@@ -132,20 +128,20 @@ export default class UserTastePreferencesConcept {
   async addDislikedDish(
     { user, dish }: { user: User; dish: Dish },
   ): Promise<Empty | { error: string }> {
-    const result = await this.users.findOneAndUpdate(
+    const _result = await this.users.findOneAndUpdate(
       { _id: user },
       {
-        $addToSet: { dislikedDishes: dish }, // Add dish to dislikedDishes if not already present
+        $addToSet: { dislikedDishes: dish },
         $pull: { likedDishes: dish }, // Remove dish from likedDishes if present
       },
-      { upsert: true, returnDocument: "after" }, // Create document if it doesn't exist
+      { upsert: true, returnDocument: "after" },
     );
 
     return {};
   }
 
   /**
-   * Action: removeDislikedDish (user: User, dish: Dish): Empty
+   * Action: remove Disliked Dish
    *
    * @requires user exists, dish is in dislikedDishes for user
    *
@@ -187,12 +183,13 @@ export default class UserTastePreferencesConcept {
   }
 
   /**
-   * Query: _getLikedDishes (user: User): (dishes: set(Dish))
+   * Query: _getLikedDishes
    *
    * @requires user exists
    *
    * @effects returns all dishes liked by the specified user
-   * If the user does not exist yet, it initializes a new user record with empty preferences.
+   *          If the user does not exist yet, it initializes a
+   *          new user record with empty preferences.
    */
   async _getLikedDishes(
     { user }: { user: User },
@@ -202,9 +199,6 @@ export default class UserTastePreferencesConcept {
       { projection: { likedDishes: 1 } },
     );
     if (!existingUser) {
-      console.warn(
-        `User with ID '${user}' not found. Initializing new user record.`,
-      );
       await this.users.insertOne({
         _id: user,
         likedDishes: [],
@@ -214,7 +208,6 @@ export default class UserTastePreferencesConcept {
       return [];
     }
 
-    // Return liked dishes normally
     const likedDishes = existingUser.likedDishes || [];
     return likedDishes.map((dish) => ({ dishes: dish }));
   }

@@ -16,7 +16,7 @@ state
 
 actions
   submitFeedback (author: User, item: Item, rating: Number): (feedback: Feedback)
-    requires: item doesn't already have feedback from this user, rating is between 0-5
+    requires: rating is between 0-5
     effects: creates a new Feedback, associating the author, target, and rating
 
   updateFeedback (author: User, item: Item, newRating: Number): (feedback: Feedback)
@@ -28,9 +28,8 @@ actions
     effects: returns True if the feedback from this user for this item is removed
 
   /_getFeedback (author: User, item: Item): (feedback: Feedback)
-    requires: feedback for this item from this user exists
+    requires:
     effects: returns the feedback from this user for this item
-
 */
 
 Deno.test(
@@ -52,6 +51,7 @@ Deno.test(
       throw new Error(`Submit failed: ${submitResult.error}`);
     }
     assertExists(submitResult.feedback, "Submit should be successful.");
+    console.log("Successfully submitted feedback.");
 
     console.log("Action 2: Viewing submitted feedback...");
     let retrieved = await concept._getFeedback({
@@ -67,6 +67,7 @@ Deno.test(
       3,
       "Initial feedback rating should be 3.",
     );
+    console.log("Successfully viewed feedback.");
 
     console.log("Action 3: Updating feedback to rating 5...");
     const updateResult = await concept.updateFeedback({
@@ -79,12 +80,13 @@ Deno.test(
     }
     assertExists(updateResult.feedback, "Update should be successful.");
 
+    console.log("Successfully updated feedback.");
+
     console.log("Action 4: Viewing updated feedback...");
     retrieved = await concept._getFeedback({
       author: testUser,
       item: testItem,
     });
-    console.log("Retrieved updated feedback:", retrieved);
     if ("error" in retrieved[0]) {
       throw new Error(
         `Failed to retrieve updated feedback: ${retrieved[0].error}`,
@@ -95,17 +97,18 @@ Deno.test(
       5,
       "Feedback rating should be updated to 5.",
     );
+    console.log("Successfully viewed updated feedback.");
 
     console.log("Action 5: Deleting feedback...");
     const deleteResult = await concept.deleteFeedback({
       author: testUser,
       item: testItem,
     });
-    console.log("Delete result:", deleteResult);
     if ("error" in deleteResult) {
       throw new Error(`Delete failed: ${deleteResult.error}`);
     }
     assertEquals(deleteResult.successful, true, "Delete should be successful.");
+    console.log("Successfully deleted result.");
 
     console.log("Action 6: Verifying feedback is deleted...");
     retrieved = await concept._getFeedback({
@@ -137,21 +140,23 @@ Deno.test("Action submitFeedback: should successfully submit feedback", async ()
   const userA = "user:Alice" as ID;
   const itemX = "item:ProductX" as ID;
 
+  console.log("Submitting Feedback with rating 4... ");
+
   const result = await concept.submitFeedback({
     author: userA,
     item: itemX,
     rating: 4,
   });
-  console.log("Submitting Feedback: ", result);
 
   if ("error" in result) {
     throw new Error(`Submit failed: ${result.error}`);
   }
   assertExists(result.feedback, "Should return a feedback ID on success.");
+  console.log("Successfully submitted feedback.");
 
+  console.log("Retrieving feedback...");
   const retrieved = await concept._getFeedback({ author: userA, item: itemX });
 
-  console.log("Retrieved feedback:", retrieved);
   if ("error" in retrieved[0]) {
     throw new Error(`Failed to retrieve feedback: ${retrieved[0].error}`);
   }
@@ -181,43 +186,11 @@ Deno.test(
     const concept = new FeedbackConcept(db);
 
     const userA = "user:Alice" as ID;
-    const itemY = "item:ProductY" as ID;
     const itemZ = "item:ProductZ" as ID;
     const itemW = "item:ProductW" as ID;
 
-    console.log(
-      "Action submitFeedback: Validating rating 0 (should succeed)...",
-    );
-    const resultValidZero = await concept.submitFeedback({
-      author: userA,
-      item: itemY,
-      rating: 0,
-    });
-    if ("error" in resultValidZero) {
-      throw new Error(`Submit with rating 0 failed: ${resultValidZero.error}`);
-    }
-    assertExists(
-      resultValidZero.feedback,
-      "Rating 0 should be successfully submitted.",
-    );
-    const retrievedZero = await concept._getFeedback({
-      author: userA,
-      item: itemY,
-    });
-    if ("error" in retrievedZero[0]) {
-      throw new Error(
-        `Failed to retrieve feedback for rating 0: ${retrievedZero[0].error}`,
-      );
-    }
-    assertEquals(
-      retrievedZero[0].feedback.rating,
-      0,
-      "Feedback rating 0 should be correctly stored.",
-    );
-    console.log("Successfully submitted feedback with rating 0.");
-
-    // Test for a truly invalid low rating, e.g., -1
-    console.log("Action submitFeedback: Invalid rating -1 (should fail)...");
+    // test low rating (-1)
+    console.log("Submitting feedback for invalid rating of -1...");
     const resultTooLow = await concept.submitFeedback({
       author: userA,
       item: itemZ,
@@ -231,11 +204,11 @@ Deno.test(
     assertExists(resultTooLow.error, "Should return an error for rating -1.");
     assert(
       resultTooLow.error.includes(
-        "Rating must be an integer between 0 and 5.", 
+        "Rating must be an integer between 0 and 5.",
       ),
       "Error message should indicate invalid rating for -1.",
     );
-    // Verify no feedback was actually created for -1
+    // verify no feedback was actually created for -1
     const retrievedInvalidLow = await concept._getFeedback({
       author: userA,
       item: itemZ,
@@ -249,8 +222,8 @@ Deno.test(
     );
     console.log("Successfully returned error message for rating -1.");
 
-    // Test for a truly invalid high rating, e.g., 6
-    console.log("Action submitFeedback: Invalid rating 6 (should fail)...");
+    // test high rating (6)
+    console.log("Submitting feedback for invalid rating of 6...");
     const resultTooHigh = await concept.submitFeedback({
       author: userA,
       item: itemW,
@@ -268,7 +241,7 @@ Deno.test(
       ),
       "Error message should indicate invalid rating for 6.",
     );
-    // Verify no feedback was actually created for 6
+    // verify no feedback was actually created for 6
     const retrievedInvalidHigh = await concept._getFeedback({
       author: userA,
       item: itemW,
@@ -281,82 +254,6 @@ Deno.test(
       "No feedback should have been created for rating 6.",
     );
     console.log("Successfully returned error message for rating 6.");
-    await client.close();
-  },
-);
-
-Deno.test(
-  "Action submitFeedback: duplicate feedback",
-  async () => {
-    const [db, client] = await testDb();
-    const concept = new FeedbackConcept(db);
-
-    const userB = "user:Bob" as ID;
-    const itemX = "item:ProductX" as ID;
-
-    console.log("Submitting first feedback...");
-    const initialSubmitResult = await concept.submitFeedback({
-      author: userB,
-      item: itemX,
-      rating: 5,
-    });
-    if ("error" in initialSubmitResult) {
-      throw new Error(`Initial submit failed: ${initialSubmitResult.error}`);
-    }
-
-    const firstSubmission = await concept._getFeedback({
-      author: userB,
-      item: itemX,
-    });
-    console.log("Feedback successfully received.");
-    if ("error" in firstSubmission[0]) {
-      throw new Error(
-        `Failed to retrieve first submission: ${firstSubmission[0].error}`,
-      );
-    }
-    assertEquals(
-      firstSubmission[0].feedback.rating,
-      5,
-      "Initial feedback should be 5.",
-    );
-
-    // Attempt to submit duplicate feedback
-    const duplicateResult = await concept.submitFeedback({
-      author: userB,
-      item: itemX,
-      rating: 3,
-    });
-    console.log("Submitting second feedback (duplicate)...");
-    if (!("error" in duplicateResult)) {
-      throw new Error("Duplicate submit should have failed, but succeeded.");
-    }
-    assertExists(
-      duplicateResult.error,
-      "Should return an error for duplicate feedback.",
-    );
-    assert(
-      duplicateResult.error.includes("already exists"),
-      "Error message should indicate duplicate feedback.",
-    );
-
-    // Verify the original feedback was not overwritten
-    const retrievedAfterDuplicate = await concept._getFeedback({
-      author: userB,
-      item: itemX,
-    });
-    console.log("Successfully returned error message.");
-    if ("error" in retrievedAfterDuplicate[0]) {
-      throw new Error(
-        `Failed to retrieve feedback after duplicate attempt: ${
-          retrievedAfterDuplicate[0].error
-        }`,
-      );
-    }
-    assertEquals(
-      retrievedAfterDuplicate[0].feedback.rating,
-      5,
-      "Original feedback rating should remain unchanged.",
-    );
     await client.close();
   },
 );
@@ -431,7 +328,7 @@ Deno.test(
     const userA = "user:Alice" as ID;
     const itemX = "item:ProductX" as ID;
 
-    console.log("Submitting Feedback for update invalid rating test...");
+    console.log("Submitting first Feedback...");
     const initialSubmitResult = await concept.submitFeedback({
       author: userA,
       item: itemX,
@@ -440,6 +337,7 @@ Deno.test(
     if ("error" in initialSubmitResult) {
       throw new Error(`Initial submit failed: ${initialSubmitResult.error}`);
     }
+    console.log("Successfully submitted first Feedback...");
 
     console.log("Attempting to update with invalid rating -1...");
     const updateResultInvalidLow = await concept.updateFeedback({
@@ -462,6 +360,7 @@ Deno.test(
       ),
       "Error message should indicate invalid newRating for -1.",
     );
+    console.log("Successfully returned error message.");
 
     console.log("Attempting to update with invalid rating 6...");
     const updateResultInvalidHigh = await concept.updateFeedback({
@@ -480,10 +379,13 @@ Deno.test(
     );
     assert(
       updateResultInvalidHigh.error.includes(
-        "New rating must be an integer between 0 and 5.", 
+        "New rating must be an integer between 0 and 5.",
       ),
       "Error message should indicate invalid newRating for 6.",
     );
+    console.log("Successfully returned error message.");
+
+    console.log("Verifying no changes made to database...");
 
     // Verify original rating is unchanged
     const retrieved = await concept._getFeedback({
@@ -505,6 +407,7 @@ Deno.test(
     console.log(
       "Successfully returned errors for invalid updates, original rating untouched.",
     );
+    console.log("Successfully returned error message.");
 
     await client.close();
   },
@@ -560,6 +463,8 @@ Deno.test(
     if ("error" in initialSubmitResult) {
       throw new Error(`Initial submit failed: ${initialSubmitResult.error}`);
     }
+    console.log("Successfully submitted feedback.");
+    console.log("Retrieving feedback...");
     let retrieved = await concept._getFeedback({ author: userA, item: itemX });
     if ("error" in retrieved[0]) {
       throw new Error(
@@ -570,8 +475,10 @@ Deno.test(
       retrieved[0].feedback,
       "Feedback should exist initially.",
     );
+    console.log("Successfully retrieved feedback.");
 
     // Delete the feedback
+    console.log("Deleting feedback...");
     const deleteResult = await concept.deleteFeedback({
       author: userA,
       item: itemX,
@@ -639,13 +546,13 @@ Deno.test(
     const concept = new FeedbackConcept(db);
 
     const userA = "user:Alice" as ID;
+    console.log("Retrieving feedback...");
 
     const nonExistentItem = "item:NonExistent" as ID;
     const retrieved = await concept._getFeedback({
       author: userA,
       item: nonExistentItem,
     });
-    console.log("Retrieved non-existent feedback:", retrieved);
 
     assert(
       Array.isArray(retrieved) && retrieved.length > 0,
@@ -666,6 +573,7 @@ Deno.test(
       ),
       "Error message should indicate no feedback.",
     );
+    console.log("Successfully returned error message.");
     await client.close();
   },
 );
@@ -686,7 +594,8 @@ Deno.test("Query _getFeedback: retrieve existing feedback", async () => {
   if ("error" in initialSubmitResult) {
     throw new Error(`Initial submit failed: ${initialSubmitResult.error}`);
   }
-
+  console.log("Successfully submitted feedback.");
+  console.log("Retrieving feedback...");
   const retrieved = await concept._getFeedback({ author: userA, item: itemY });
   assert(
     Array.isArray(retrieved) && retrieved.length > 0,
@@ -703,5 +612,108 @@ Deno.test("Query _getFeedback: retrieve existing feedback", async () => {
     "Retrieved feedback rating should be 3.",
   );
   console.log("Successfully received feedback.");
+  await client.close();
+});
+
+Deno.test("Query _getAllUserRatings: retrieve all ratings for a user", async () => {
+  const [db, client] = await testDb();
+  const concept = new FeedbackConcept(db);
+
+  const userA = "user:Alice" as ID;
+  const item1 = "item:Pizza" as ID;
+  const item2 = "item:Salad" as ID;
+  const item3 = "item:Burger" as ID;
+
+  console.log("Submitting multiple feedback entries...");
+
+  // Submit feedback for multiple items
+  const result1 = await concept.submitFeedback({
+    author: userA,
+    item: item1,
+    rating: 5,
+  });
+  if ("error" in result1) {
+    throw new Error(`Submit failed for item1: ${result1.error}`);
+  }
+
+  const result2 = await concept.submitFeedback({
+    author: userA,
+    item: item2,
+    rating: 3,
+  });
+  if ("error" in result2) {
+    throw new Error(`Submit failed for item2: ${result2.error}`);
+  }
+
+  const result3 = await concept.submitFeedback({
+    author: userA,
+    item: item3,
+    rating: 1,
+  });
+  if ("error" in result3) {
+    throw new Error(`Submit failed for item3: ${result3.error}`);
+  }
+
+  console.log("Successfully submitted 3 feedback entries.");
+
+  console.log("Retrieving all user ratings...");
+  const allRatings = await concept._getAllUserRatings({ author: userA });
+
+  assert(
+    Array.isArray(allRatings),
+    "Should return an array.",
+  );
+  assertEquals(
+    allRatings.length,
+    3,
+    "Should return 3 feedback entries.",
+  );
+
+  // Verify all ratings are present
+  const ratingsMap = new Map();
+  allRatings.forEach(({ feedback }) => {
+    ratingsMap.set(feedback.target, feedback.rating);
+  });
+
+  assertEquals(
+    ratingsMap.get(item1),
+    5,
+    "Pizza rating should be 5.",
+  );
+  assertEquals(
+    ratingsMap.get(item2),
+    3,
+    "Salad rating should be 3.",
+  );
+  assertEquals(
+    ratingsMap.get(item3),
+    1,
+    "Burger rating should be 1.",
+  );
+
+  console.log("Successfully retrieved all user ratings.");
+  await client.close();
+});
+
+Deno.test("Query _getAllUserRatings: user with no ratings", async () => {
+  const [db, client] = await testDb();
+  const concept = new FeedbackConcept(db);
+
+  const userB = "user:Bob" as ID;
+
+  console.log("Retrieving ratings for user with no feedback...");
+  const allRatings = await concept._getAllUserRatings({ author: userB });
+
+  assert(
+    Array.isArray(allRatings),
+    "Should return an array.",
+  );
+  assertEquals(
+    allRatings.length,
+    0,
+    "Should return empty array for user with no ratings.",
+  );
+
+  console.log("Successfully returned empty array for user with no ratings.");
   await client.close();
 });

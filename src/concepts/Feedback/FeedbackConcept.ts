@@ -15,7 +15,7 @@ state
 
 actions
   submitFeedback (author: User, item: Item, rating: Number): (feedback: Feedback)
-    requires: item doesn't already have feedback from this user, rating is between 0-5
+    requires: rating is between 0-5
     effects: creates a new Feedback, associating the author, target, and rating
 
   updateFeedback (author: User, item: Item, newRating: Number): (feedback: Feedback)
@@ -27,8 +27,12 @@ actions
     effects: returns True if the feedback from this user for this item is removed
 
   /_getFeedback (author: User, item: Item): (feedback: Feedback)
-    requires: feedback for this item from this user exists
+    requires:
     effects: returns the feedback from this user for this item
+
+  /_getAllUserRatings (author: User): (feedbacks: set(Feedback))
+    requires:
+    effects: returns all feedback documents from this user
 */
 
 const PREFIX = "Feedback" + ".";
@@ -62,11 +66,11 @@ export default class FeedbackConcept {
   }
 
   /**
-   * Action: submit Feedback for a given item from a given author
+   * Action submit Feedback for a given item from a given author
    *
    * @requires rating is between 0-5
    *
-   * @effects creates and returns a new Feedback, associating the author, item, and rating (or updates it if it already exists)
+   * @effects creates and returns a new Feedback, associating the author, target, and rating
    *          If requirements are not met, returns an error message
    */
   async submitFeedback(
@@ -77,7 +81,7 @@ export default class FeedbackConcept {
       return { error: "Rating must be an integer between 0 and 5." };
     }
 
-    // item doesn't already have feedback from this user
+    // item already has feedback from this user, so update it
     const existingFeedback = await this.feedbacks.findOne({
       author,
       target: item,
@@ -86,7 +90,7 @@ export default class FeedbackConcept {
       return await this.updateFeedback({ author, item, newRating: rating });
     }
 
-    // Create a new Feedback
+    // item doesn't already have feedback from this user, create a new Feedback
     const newFeedbackId: Feedback = freshID();
     const newFeedback: FeedbackDocument = {
       _id: newFeedbackId,
@@ -99,7 +103,7 @@ export default class FeedbackConcept {
       await this.feedbacks.insertOne(newFeedback);
       return { feedback: newFeedbackId };
     } catch (e) {
-      return { error: "Failed to submit feedback due to a database error." };
+      return { error: e as string };
     }
   }
 
@@ -128,6 +132,7 @@ export default class FeedbackConcept {
       author,
       target: item,
     });
+
     if (!existingFeedback) {
       return {
         error:
@@ -135,7 +140,7 @@ export default class FeedbackConcept {
       };
     }
 
-    // Update the rating of the existing feedback
+    // update the rating
     try {
       await this.feedbacks.updateOne(
         { _id: existingFeedback._id },
@@ -143,7 +148,7 @@ export default class FeedbackConcept {
       );
       return { feedback: existingFeedback._id };
     } catch (e) {
-      return { error: "Failed to update feedback due to a database error." };
+      return { error: e as string };
     }
   }
 
@@ -169,7 +174,7 @@ export default class FeedbackConcept {
       };
     }
 
-    // Remove the feedback
+    // remove the feedback
     const result = await this.feedbacks.deleteOne({
       _id: existingFeedback._id,
     });
@@ -186,7 +191,7 @@ export default class FeedbackConcept {
    *
    * @requires
    * @effects returns an array containing the feedback document from this user for this item,
-   *          or an array containing an error message if no such feedback exists.
+   *          or an error message if no such feedback exists.
    */
   async _getFeedback(
     { author, item }: { author: User; item: Item },
@@ -197,16 +202,33 @@ export default class FeedbackConcept {
       if (feedback) {
         return [{ feedback }];
       } else {
-        // If feedback does not exist, return an error message in the array
+        // if feedback does not exist, return an error message
         return [{
           error: `No feedback found for item ${item} from user ${author}.`,
         }];
       }
     } catch (e) {
-      console.error("Error retrieving feedback:", e);
       return [{
-        error: "Failed to retrieve feedback due to a database error.",
+        error: e as string,
       }];
+    }
+  }
+
+  /**
+   * Query: get all ratings for a given user
+   *
+   * @requires
+   * @effects returns an array containing all feedback documents from this user,
+   *          or an empty array if no feedback exists.
+   */
+  async _getAllUserRatings(
+    { author }: { author: User },
+  ): Promise<Array<{ feedback: FeedbackDocument }>> {
+    try {
+      const feedbacks = await this.feedbacks.find({ author }).toArray();
+      return feedbacks.map((feedback) => ({ feedback }));
+    } catch (e) {
+      return [];
     }
   }
 }
