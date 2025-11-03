@@ -227,7 +227,7 @@ export default class FeedbackConcept {
     try {
       const feedbacks = await this.feedbacks.find({ author }).toArray();
       return feedbacks.map((feedback) => ({ feedback }));
-    } catch (e) {
+    } catch (_e) {
       return [];
     }
   }
