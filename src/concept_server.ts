@@ -21,8 +21,18 @@ const CONCEPTS_DIR = "src/concepts";
  * Main server function to initialize DB, load concepts, and start the server.
  */
 async function main() {
-  const [db] = await getDb();
   const app = new Hono();
+
+  const [db, client] = await getDb();
+
+  try {
+    // Simple ping to confirm connection
+    await db.command({ ping: 1 });
+    console.log("[DB] ✅ Successfully connected to MongoDB");
+  } catch (e) {
+    console.error("[DB] ❌ MongoDB connection failed:", e);
+  }
+
 
   app.use(
     "*",
