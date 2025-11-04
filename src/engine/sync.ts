@@ -61,19 +61,61 @@ export class SyncConcept {
     this.Action = actionConcept;
   }
   register(syncs: SyncFunctionMap) {
+    if (this.logging === Logging.TRACE || this.logging === Logging.VERBOSE) {
+      console.log(
+        `[SyncEngine] register() called with ${
+          Object.keys(syncs).length
+        } sync(s)`,
+      );
+    }
     for (const [name, syncFunction] of Object.entries(syncs)) {
-      const syncDeclaration = syncFunction($vars);
-      const sync = { sync: name, ...syncDeclaration };
-      this.syncs[name] = sync;
-      // Index each sync by all actions in the `when`
-      for (const { action } of sync.when) {
-        const mappedSyncs = this.syncsByAction.get(action);
-        if (mappedSyncs === undefined) {
-          this.syncsByAction.set(action, new Set([sync]));
-        } else {
-          mappedSyncs.add(sync);
+      try {
+        const syncDeclaration = syncFunction($vars);
+        const sync = { sync: name, ...syncDeclaration };
+        this.syncs[name] = sync;
+        // Index each sync by all actions in the `when`
+        for (const { action } of sync.when) {
+          if (
+            this.logging === Logging.TRACE || this.logging === Logging.VERBOSE
+          ) {
+            console.log(
+              `[SyncEngine] Registering sync "${name}" for action: ${
+                (action as InstrumentedAction).action?.name || "unknown"
+              }, action reference:`,
+              action,
+            );
+          }
+          const mappedSyncs = this.syncsByAction.get(action);
+          if (mappedSyncs === undefined) {
+            this.syncsByAction.set(action, new Set([sync]));
+            if (
+              this.logging === Logging.TRACE || this.logging === Logging.VERBOSE
+            ) {
+              console.log(
+                `[SyncEngine] Created new Set for action, now ${this.syncsByAction.size} action(s) in map`,
+              );
+            }
+          } else {
+            mappedSyncs.add(sync);
+            if (
+              this.logging === Logging.TRACE || this.logging === Logging.VERBOSE
+            ) {
+              console.log(
+                `[SyncEngine] Added to existing Set for action, now ${mappedSyncs.size} sync(s) for this action`,
+              );
+            }
+          }
         }
+      } catch (error) {
+        console.error(`[SyncEngine] Error registering sync "${name}":`, error);
       }
+    }
+    if (this.logging === Logging.TRACE || this.logging === Logging.VERBOSE) {
+      console.log(
+        `[SyncEngine] Registration complete. Total syncs: ${
+          Object.keys(this.syncs).length
+        }, Total actions in map: ${this.syncsByAction.size}`,
+      );
     }
   }
   async synchronize(record: ActionRecord) {
