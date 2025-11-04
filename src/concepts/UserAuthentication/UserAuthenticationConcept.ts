@@ -98,13 +98,22 @@ export default class UserAuthenticationConcept {
   async authenticate(
     { username, password }: { username: string; password: string },
   ): Promise<{ user: User } | { error: string }> {
+    console.log(
+      `[UserAuthentication] authenticate called with username: ${username}`,
+    );
     const user = await this.users.findOne({ username });
 
     // Check if user exists and password matches
     if (!user || !verifyPassword(password, user.password)) {
+      console.log(
+        `[UserAuthentication] authenticate failed for username: ${username}`,
+      );
       return { error: "Invalid username or password." };
     }
 
+    console.log(
+      `[UserAuthentication] authenticate succeeded for username: ${username}, user ID: ${user._id}`,
+    );
     return { user: user._id };
   }
 

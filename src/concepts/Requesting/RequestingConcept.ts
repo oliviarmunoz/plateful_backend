@@ -23,7 +23,8 @@ const REQUESTING_TIMEOUT = parseInt(
 );
 
 // TODO: make sure you configure this environment variable for proper CORS configuration
-const REQUESTING_ALLOWED_DOMAIN = Deno.env.get("REQUESTING_ALLOWED_DOMAIN") ?? "*";
+const REQUESTING_ALLOWED_DOMAIN = Deno.env.get("REQUESTING_ALLOWED_DOMAIN") ??
+  "*";
 
 // Choose whether or not to persist responses
 const REQUESTING_SAVE_RESPONSES = Deno.env.get("REQUESTING_SAVE_RESPONSES") ??
@@ -117,10 +118,18 @@ export default class RequestingConcept {
   async respond(
     { request, ...response }: { request: Request; [key: string]: unknown },
   ): Promise<{ request: string }> {
+    console.log(
+      `[Requesting] respond called for request: ${request}`,
+      response,
+    );
     const pendingRequest = this.pending.get(request);
     if (pendingRequest) {
       // Resolve the promise for any waiting `_awaitResponse` call.
       pendingRequest.resolve(response);
+    } else {
+      console.log(
+        `[Requesting] WARNING: respond called for request ${request} but no pending request found`,
+      );
     }
 
     // Update the persisted request document with the response.
