@@ -11,7 +11,11 @@ import * as concepts from "@concepts";
 const { Engine } = concepts;
 import { Logging } from "@engine";
 import { startRequestingServer } from "@concepts/Requesting/RequestingConcept.ts";
-import syncs from "@syncs";
+
+// Dynamic import to ensure @concepts is fully initialized before loading syncs
+// This prevents circular dependency issues where syncs.ts imports @concepts
+const syncsModule = await import("@syncs");
+const syncs = syncsModule.default;
 
 console.log(
   `[Main] Imported syncs:`,
