@@ -6,17 +6,21 @@ import { generate } from "jsr:@std/uuid/unstable-v7";
 
 async function initMongoClient() {
   const DB_CONN = Deno.env.get("MONGODB_URL");
-  if (DB_CONN === undefined) {
-    throw new Error("Could not find environment variable: MONGODB_URL");
-  }
+  console.log("[DB] Connecting to MongoDB...");
+
+  if (!DB_CONN) throw new Error("Missing MONGODB_URL");
+
   const client = new MongoClient(DB_CONN);
   try {
     await client.connect();
+    console.log("[DB] ✅ Connected successfully to MongoDB");
   } catch (e) {
-    throw new Error("MongoDB connection failed: " + e);
+    console.error("[DB] ❌ MongoDB connection failed:", e);
+    throw e;
   }
   return client;
 }
+
 
 async function init() {
   const client = await initMongoClient();

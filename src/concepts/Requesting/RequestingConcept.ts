@@ -191,9 +191,12 @@ export function startRequestingServer(
     throw new Error("Requesting concept missing or broken.");
   }
   const app = new Hono();
-    app.use('/*', cors({
-    origin: REQUESTING_ALLOWED_DOMAIN,
-  }))
+  app.use(
+    "/*",
+    cors({
+      origin: REQUESTING_ALLOWED_DOMAIN,
+    }),
+  );
 
   /**
    * PASSTHROUGH ROUTES
