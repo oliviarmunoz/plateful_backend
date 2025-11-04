@@ -31,6 +31,7 @@ const _requesting = concepts.Requesting;
 const _userAuth = concepts.UserAuthentication;
 const _tastePrefs = concepts.UserTastePreferences;
 const _db = concepts.db;
+const _engine = concepts.Engine;
 
 console.log(
   "[Main] Concepts accessed - Feedback:",
@@ -42,28 +43,41 @@ console.log(
   typeof _requesting,
   !!_requesting,
 );
+console.log("[Main] Engine:", typeof _engine, !!_engine);
+
+// Ensure concepts module is fully resolved by importing it again
+// This forces any pending module evaluation to complete
+await import("@concepts");
 
 // Small delay to ensure any async module evaluation completes
-await new Promise((resolve) => setTimeout(resolve, 200));
+await new Promise((resolve) => setTimeout(resolve, 100));
 
 // Dynamic import to ensure @concepts is fully initialized before loading syncs
 // This prevents circular dependency issues where syncs.ts imports @concepts
 console.log("[Main] About to dynamically import syncs...");
 let syncs;
 try {
-  // Try using import map alias with explicit URL with cache busting
-  const syncsUrl = new URL("./syncs/syncs.ts", import.meta.url).href +
-    `?v=${Date.now()}`;
-  console.log("[Main] Importing syncs from:", syncsUrl);
-  const syncsModule = await import(syncsUrl);
+  // Use import map alias - this should work better with Deno's module resolution
+  console.log("[Main] Importing syncs using @syncs alias...");
+  const syncsModule = await import("@syncs");
   console.log(
     "[Main] Syncs module imported. Has default:",
     "default" in syncsModule,
   );
   console.log("[Main] Syncs module keys:", Object.keys(syncsModule));
-  syncs = syncsModule.default;
-  console.log("[Main] Syncs default type:", typeof syncs);
-  console.log("[Main] Syncs default:", syncs);
+  const getSyncs = syncsModule.default;
+  console.log("[Main] Syncs default type:", typeof getSyncs);
+
+  // If it's a function, call it to get the syncs
+  if (typeof getSyncs === "function") {
+    console.log("[Main] Calling getSyncs() to retrieve syncs...");
+    syncs = getSyncs();
+  } else {
+    // If it's already an object (backwards compatibility)
+    syncs = getSyncs;
+  }
+
+  console.log("[Main] Syncs:", syncs);
 
   // If syncs is empty, try forcing a fresh import
   if (!syncs || Object.keys(syncs).length === 0) {
