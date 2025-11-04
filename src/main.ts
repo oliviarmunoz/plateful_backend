@@ -14,8 +14,22 @@ import { startRequestingServer } from "@concepts/Requesting/RequestingConcept.ts
 
 // Dynamic import to ensure @concepts is fully initialized before loading syncs
 // This prevents circular dependency issues where syncs.ts imports @concepts
-const syncsModule = await import("@syncs");
-const syncs = syncsModule.default;
+console.log("[Main] About to dynamically import syncs...");
+let syncs;
+try {
+  const syncsModule = await import("@syncs");
+  console.log(
+    "[Main] Syncs module imported. Has default:",
+    "default" in syncsModule,
+  );
+  console.log("[Main] Syncs module keys:", Object.keys(syncsModule));
+  syncs = syncsModule.default;
+  console.log("[Main] Syncs default type:", typeof syncs);
+  console.log("[Main] Syncs default:", syncs);
+} catch (error) {
+  console.error("[Main] Error importing syncs:", error);
+  throw error;
+}
 
 console.log(
   `[Main] Imported syncs:`,
