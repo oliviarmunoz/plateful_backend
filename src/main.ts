@@ -67,27 +67,59 @@ try {
   console.log("[Main] Syncs module keys:", Object.keys(syncsModule));
   const getSyncs = syncsModule.default;
   console.log("[Main] Syncs default type:", typeof getSyncs);
+  console.log("[Main] Syncs default value:", getSyncs);
 
   // If it's a function, call it to get the syncs
   if (typeof getSyncs === "function") {
     console.log("[Main] Calling getSyncs() to retrieve syncs...");
-    syncs = getSyncs();
-  } else {
-    // If it's already an object (backwards compatibility)
+    try {
+      syncs = getSyncs();
+      console.log(
+        "[Main] getSyncs() returned syncs with",
+        Object.keys(syncs).length,
+        "keys",
+      );
+    } catch (error) {
+      console.error("[Main] Error calling getSyncs():", error);
+      throw error;
+    }
+  } else if (getSyncs && typeof getSyncs === "object") {
+    // If it's already an object (old cached version)
+    console.warn(
+      "[Main] WARNING: Got object instead of function - module might be cached!",
+    );
+    console.warn("[Main] Object keys:", Object.keys(getSyncs));
     syncs = getSyncs;
+
+    // If syncs is empty, this is definitely a caching issue
+    if (Object.keys(syncs).length === 0) {
+      console.error(
+        "[Main] ERROR: Module returned empty object! This indicates a caching issue.",
+      );
+      console.error(
+        "[Main] The syncs.ts module was likely cached from a previous failed evaluation.",
+      );
+      console.error(
+        "[Main] On Render, try:",
+      );
+      console.error("  1. Clear the build cache in Render dashboard");
+      console.error("  2. Or redeploy the service");
+      console.error("  3. Or ensure --reload flag is working");
+      throw new Error(
+        "Syncs module returned empty object - likely a caching issue. Please redeploy or clear cache.",
+      );
+    }
+  } else {
+    console.error(
+      "[Main] ERROR: Unexpected syncs default type:",
+      typeof getSyncs,
+    );
+    throw new Error(
+      `Unexpected syncs module default export type: ${typeof getSyncs}`,
+    );
   }
 
-  console.log("[Main] Syncs:", syncs);
-
-  // If syncs is empty, try forcing a fresh import
-  if (!syncs || Object.keys(syncs).length === 0) {
-    console.warn(
-      "[Main] Syncs is empty! This might be a module caching issue.",
-    );
-    console.warn(
-      "[Main] Try running with: deno run --reload --allow-net --allow-write --allow-read --allow-sys --allow-env src/main.ts",
-    );
-  }
+  console.log("[Main] Final syncs count:", Object.keys(syncs).length);
 } catch (error) {
   console.error("[Main] Error importing syncs:", error);
   console.error(

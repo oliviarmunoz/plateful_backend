@@ -1460,9 +1460,9 @@ Requesting concept initialized with a timeout of 10000ms.
           [Symbol("@@mdb.enableMongoLogger")]: false
         },
         seedlist: [
+          new HostAddress('ac-pmrbzp8-shard-00-02.ncdnzqg.mongodb.net.:27017'),
           new HostAddress('ac-pmrbzp8-shard-00-00.ncdnzqg.mongodb.net.:27017'),
-          new HostAddress('ac-pmrbzp8-shard-00-01.ncdnzqg.mongodb.net.:27017'),
-          new HostAddress('ac-pmrbzp8-shard-00-02.ncdnzqg.mongodb.net.:27017')
+          new HostAddress('ac-pmrbzp8-shard-00-01.ncdnzqg.mongodb.net.:27017')
         ],
         state: "connected",
         description: TopologyDescription {
@@ -1494,7 +1494,7 @@ Requesting concept initialized with a timeout of 10000ms.
           mechanismProperties: {}
         },
         clusterTime: {
-          clusterTime: new Timestamp({ t: 1762231206, i: 1 }),
+          clusterTime: new Timestamp({ t: 1762231581, i: 1 }),
           signature: [Object]
         },
         connectionTimers: Set(0) {},
@@ -1531,9 +1531,9 @@ Requesting concept initialized with a timeout of 10000ms.
     [Symbol(kCapture)]: false,
     [Symbol(options)]: [Object: null prototype] {
       hosts: [
+        new HostAddress('ac-pmrbzp8-shard-00-02.ncdnzqg.mongodb.net.:27017'),
         new HostAddress('ac-pmrbzp8-shard-00-00.ncdnzqg.mongodb.net.:27017'),
-        new HostAddress('ac-pmrbzp8-shard-00-01.ncdnzqg.mongodb.net.:27017'),
-        new HostAddress('ac-pmrbzp8-shard-00-02.ncdnzqg.mongodb.net.:27017')
+        new HostAddress('ac-pmrbzp8-shard-00-01.ncdnzqg.mongodb.net.:27017')
       ],
       appName: "Cluster0",
       credentials: MongoCredentials {
@@ -1751,9 +1751,9 @@ Requesting concept initialized with a timeout of 10000ms.
       [Symbol(kCapture)]: false,
       [Symbol(options)]: [Object: null prototype] {
         hosts: [
+          new HostAddress('ac-pmrbzp8-shard-00-02.ncdnzqg.mongodb.net.:27017'),
           new HostAddress('ac-pmrbzp8-shard-00-00.ncdnzqg.mongodb.net.:27017'),
-          new HostAddress('ac-pmrbzp8-shard-00-01.ncdnzqg.mongodb.net.:27017'),
-          new HostAddress('ac-pmrbzp8-shard-00-02.ncdnzqg.mongodb.net.:27017')
+          new HostAddress('ac-pmrbzp8-shard-00-01.ncdnzqg.mongodb.net.:27017')
         ],
         appName: "Cluster0",
         credentials: MongoCredentials {
@@ -1832,14 +1832,15 @@ Requesting concept initialized with a timeout of 10000ms.
 }
 [Main] Concepts accessed - Feedback: object true
 [Main] Concepts accessed - Requesting: object true
+[Main] Engine: object true
 [Main] About to dynamically import syncs...
-[Main] Importing syncs from: file:///app/src/syncs/syncs.ts?v=1762231207406
+[Main] Importing syncs using @syncs alias...
+[Main] Syncs is empty! This might be a module caching issue.
 [Main] Syncs module imported. Has default: true
+[Main] Try running with: deno run --reload --allow-net --allow-write --allow-read --allow-sys --allow-env src/main.ts
 [Main] Syncs module keys: [ "default" ]
 [Main] Syncs default type: object
-[Main] Syncs default: {}
-[Main] Syncs is empty! This might be a module caching issue.
-[Main] Try running with: deno run --reload --allow-net --allow-write --allow-read --allow-sys --allow-env src/main.ts
+[Main] Syncs: {}
 [Main] Imported syncs: 0 syncs: []
 [SyncEngine] register() called with 0 sync(s)
 [SyncEngine] Registration complete. Total syncs: 0, Total actions in map: 0
@@ -1869,9 +1870,9 @@ Requesting.request {
   username: 'testusername',
   password: 'testpassword',
   path: '/UserAuthentication/authenticate'
-} => { request: '019a4d2a-df7a-744e-9c9e-2a1effa7eccc' }
+} => { request: '019a4d31-1882-776c-9a09-fdfb135c47e3' }
 [SyncEngine] No syncs found for action bound request
 [SyncEngine] Action reference being looked up: [Function: bound request] AsyncFunction
 [SyncEngine] Available action keys in syncsByAction (0 total): []
-[Requesting] Request action completed with request ID: 019a4d2a-df7a-744e-9c9e-2a1effa7eccc
-[Requesting] Error processing request: Request 019a4d2a-df7a-744e-9c9e-2a1effa7eccc timed out after 10000ms
+[Requesting] Request action completed with request ID: 019a4d31-1882-776c-9a09-fdfb135c47e3
+[Requesting] Error processing request: Request 019a4d31-1882-776c-9a09-fdfb135c47e3 timed out after 10000ms

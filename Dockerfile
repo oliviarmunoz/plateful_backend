@@ -19,9 +19,11 @@ COPY --chown=deno:deno . .
 # This step writes to src/concepts/concepts.ts and now has permission to do so.
 RUN deno task build
 
-# Cache the main module and all its dependencies.
-# This ensures faster startup times for the container as modules are pre-compiled.
-RUN deno cache src/main.ts
+# NOTE: We intentionally do NOT cache modules here because:
+# 1. syncs.ts depends on @concepts which has a top-level await (database connection)
+# 2. Caching during build time would evaluate syncs.ts before concepts are ready
+# 3. This causes syncs to be cached with an empty/broken state
+# 4. Modules will be cached at runtime when the container starts
 
 # Specify the command to run when the container starts.
 # Using 'deno task start' is the best practice here, as it encapsulates
