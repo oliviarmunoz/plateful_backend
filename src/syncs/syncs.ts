@@ -8,11 +8,18 @@ import { actions, Frames, Sync } from "@engine";
 import { ID } from "@utils/types.ts";
 
 // Debug: Check if concepts are available
+console.log("[Syncs] Top-level code executing...");
 console.log("[Syncs] Concepts available:", {
   Feedback: !!Feedback,
   Requesting: !!Requesting,
   UserAuthentication: !!UserAuthentication,
   UserTastePreferences: !!UserTastePreferences,
+});
+console.log("[Syncs] Concepts values:", {
+  Feedback: Feedback,
+  Requesting: Requesting,
+  UserAuthentication: UserAuthentication,
+  UserTastePreferences: UserTastePreferences,
 });
 
 /**
@@ -549,6 +556,26 @@ console.log(
   Object.keys(syncsToExport).length,
 );
 console.log("[Syncs] Sync names:", Object.keys(syncsToExport));
+
+// Validate that concepts are available
+if (!Feedback || !Requesting || !UserAuthentication || !UserTastePreferences) {
+  console.error(
+    "[Syncs] ERROR: Concepts are not available when syncs.ts is evaluated!",
+  );
+  console.error("[Syncs] Feedback:", Feedback);
+  console.error("[Syncs] Requesting:", Requesting);
+  console.error("[Syncs] UserAuthentication:", UserAuthentication);
+  console.error("[Syncs] UserTastePreferences:", UserTastePreferences);
+  throw new Error(
+    "Concepts must be fully initialized before syncs.ts can be evaluated",
+  );
+}
+
+// Validate that syncs are properly defined
+if (Object.keys(syncsToExport).length === 0) {
+  console.error("[Syncs] ERROR: No syncs were defined!");
+  throw new Error("At least one sync must be defined");
+}
 
 // Export all syncs
 export default syncsToExport;
