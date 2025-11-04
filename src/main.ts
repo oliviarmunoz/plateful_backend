@@ -13,6 +13,13 @@ import { Logging } from "@engine";
 import { startRequestingServer } from "@concepts/Requesting/RequestingConcept.ts";
 import syncs from "@syncs";
 
+console.log(
+  `[Main] Imported syncs:`,
+  Object.keys(syncs).length,
+  "syncs:",
+  Object.keys(syncs),
+);
+
 /**
  * Available logging levels:
  *   Logging.OFF
