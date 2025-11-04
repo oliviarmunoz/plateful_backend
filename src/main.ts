@@ -22,6 +22,10 @@ console.log("[Main] Concepts available:", {
   UserTastePreferences: !!concepts.UserTastePreferences,
 });
 
+// Force concepts to be fully evaluated by accessing all exports
+const _ = concepts.Feedback && concepts.Requesting &&
+  concepts.UserAuthentication && concepts.UserTastePreferences;
+
 // Small delay to ensure module evaluation completes
 await new Promise((resolve) => setTimeout(resolve, 100));
 
@@ -30,9 +34,10 @@ await new Promise((resolve) => setTimeout(resolve, 100));
 console.log("[Main] About to dynamically import syncs...");
 let syncs;
 try {
-  // Use import with cache busting via reload flag won't work in runtime
-  // Instead, we'll import and check if it's properly populated
-  const syncsModule = await import("@syncs");
+  // Try using import map alias with explicit URL
+  const syncsUrl = new URL("./syncs/syncs.ts", import.meta.url).href;
+  console.log("[Main] Importing syncs from:", syncsUrl);
+  const syncsModule = await import(syncsUrl);
   console.log(
     "[Main] Syncs module imported. Has default:",
     "default" in syncsModule,
