@@ -13,29 +13,47 @@ import { Logging } from "@engine";
 import { startRequestingServer } from "@concepts/Requesting/RequestingConcept.ts";
 
 // Ensure @concepts is fully initialized before loading syncs
-// Access the concepts to ensure they're ready
+// Since @concepts has top-level await, we need to explicitly wait for it to be ready
 console.log("[Main] Verifying concepts are ready...");
+console.log("[Main] Concepts module:", concepts);
 console.log("[Main] Concepts available:", {
   Feedback: !!concepts.Feedback,
   Requesting: !!concepts.Requesting,
   UserAuthentication: !!concepts.UserAuthentication,
   UserTastePreferences: !!concepts.UserTastePreferences,
+  db: !!concepts.db,
 });
 
 // Force concepts to be fully evaluated by accessing all exports
-const _ = concepts.Feedback && concepts.Requesting &&
-  concepts.UserAuthentication && concepts.UserTastePreferences;
+// This ensures the top-level await in concepts.ts has completed
+const _feedback = concepts.Feedback;
+const _requesting = concepts.Requesting;
+const _userAuth = concepts.UserAuthentication;
+const _tastePrefs = concepts.UserTastePreferences;
+const _db = concepts.db;
 
-// Small delay to ensure module evaluation completes
-await new Promise((resolve) => setTimeout(resolve, 100));
+console.log(
+  "[Main] Concepts accessed - Feedback:",
+  typeof _feedback,
+  !!_feedback,
+);
+console.log(
+  "[Main] Concepts accessed - Requesting:",
+  typeof _requesting,
+  !!_requesting,
+);
+
+// Small delay to ensure any async module evaluation completes
+await new Promise((resolve) => setTimeout(resolve, 200));
 
 // Dynamic import to ensure @concepts is fully initialized before loading syncs
 // This prevents circular dependency issues where syncs.ts imports @concepts
 console.log("[Main] About to dynamically import syncs...");
 let syncs;
 try {
-  // Try using import map alias with explicit URL
-  const syncsUrl = new URL("./syncs/syncs.ts", import.meta.url).href;
+  // Try using import map alias with explicit URL with cache busting
+  const syncsUrl = new URL("./syncs/syncs.ts", import.meta.url).href +
+    `?v=${Date.now()}`;
   console.log("[Main] Importing syncs from:", syncsUrl);
   const syncsModule = await import(syncsUrl);
   console.log(

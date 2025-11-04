@@ -7,6 +7,10 @@ import {
 import { actions, Frames, Sync } from "@engine";
 import { ID } from "@utils/types.ts";
 
+console.log("[Syncs] ========== MODULE TOP-LEVEL CODE EXECUTING ==========");
+console.log("[Syncs] Module URL:", import.meta.url);
+console.log("[Syncs] Current time:", new Date().toISOString());
+
 // Debug: Check if concepts are available
 console.log("[Syncs] Top-level code executing...");
 console.log("[Syncs] Concepts available:", {
