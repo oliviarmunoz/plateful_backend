@@ -274,9 +274,12 @@ export function startRequestingServer(
       // e.g., if base is /api and request is /api/users/create, path is /users/create
       const actionPath = c.req.path.substring(REQUESTING_BASE_URL.length);
 
+      // Filter out 'request' and 'path' from body if present (these are backend-managed fields)
+      const { request: _, path: __, ...bodyWithoutSystemFields } = body;
+
       // Combine the path from the URL with the JSON body to form the action's input.
       const inputs = {
-        ...body,
+        ...bodyWithoutSystemFields,
         path: actionPath,
       };
 
