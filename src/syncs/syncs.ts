@@ -7,6 +7,14 @@ import {
 import { actions, Frames, Sync } from "@engine";
 import { ID } from "@utils/types.ts";
 
+// Debug: Check if concepts are available
+console.log("[Syncs] Concepts available:", {
+  Feedback: !!Feedback,
+  Requesting: !!Requesting,
+  UserAuthentication: !!UserAuthentication,
+  UserTastePreferences: !!UserTastePreferences,
+});
+
 /**
  * Helper function to verify user exists
  * Returns true if user exists (no error from _getUsername)
@@ -506,8 +514,8 @@ export const RemoveDislikedDishResponse: Sync = ({ request }) => ({
   then: actions([Requesting.respond, { request }]),
 });
 
-// Export all syncs
-export default {
+// Debug: Prepare syncs for export
+const syncsToExport = {
   SubmitFeedbackErrorInvalidUser,
   SubmitFeedbackRequest,
   SubmitFeedbackResponse,
@@ -535,3 +543,12 @@ export default {
   RemoveDislikedDishRequest,
   RemoveDislikedDishResponse,
 };
+
+console.log(
+  "[Syncs] About to export syncs. Count:",
+  Object.keys(syncsToExport).length,
+);
+console.log("[Syncs] Sync names:", Object.keys(syncsToExport));
+
+// Export all syncs
+export default syncsToExport;
