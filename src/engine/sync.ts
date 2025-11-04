@@ -140,10 +140,21 @@ export class SyncConcept {
       }
     } else {
       if (this.logging === Logging.TRACE || this.logging === Logging.VERBOSE) {
+        const actionName = (record.action as InstrumentedAction).action?.name ||
+          "unknown";
         console.log(
-          `[SyncEngine] No syncs found for action ${
-            (record.action as InstrumentedAction).action?.name || "unknown"
-          }`,
+          `[SyncEngine] No syncs found for action ${actionName}`,
+        );
+        console.log(
+          `[SyncEngine] Action reference being looked up:`,
+          record.action,
+        );
+        console.log(
+          `[SyncEngine] Available action keys in syncsByAction (${this.syncsByAction.size} total):`,
+          Array.from(this.syncsByAction.keys()).map((a) => ({
+            name: (a as InstrumentedAction).action?.name || "unknown",
+            reference: a,
+          })),
         );
       }
     }
