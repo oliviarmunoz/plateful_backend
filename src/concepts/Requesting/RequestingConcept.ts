@@ -287,6 +287,9 @@ export function startRequestingServer(
 
       // 1. Trigger the 'request' action.
       const { request } = await Requesting.request(inputs);
+      console.log(
+        `[Requesting] Request action completed with request ID: ${request}`,
+      );
 
       // 2. Await the response via the query. This is where the server waits for
       //    synchronizations to trigger the 'respond' action.

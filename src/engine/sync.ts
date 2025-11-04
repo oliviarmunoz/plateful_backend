@@ -100,7 +100,19 @@ export class SyncConcept {
     }
     const syncs = await this.syncsByAction.get(record.action);
     if (syncs) {
+      if (this.logging === Logging.TRACE || this.logging === Logging.VERBOSE) {
+        console.log(
+          `[SyncEngine] Found ${syncs.size} sync(s) for action ${
+            (record.action as InstrumentedAction).action?.name || "unknown"
+          }`,
+        );
+      }
       for (const sync of syncs) {
+        if (
+          this.logging === Logging.TRACE || this.logging === Logging.VERBOSE
+        ) {
+          console.log(`[SyncEngine] Trying to match sync: ${sync.sync}`);
+        }
         let [frames, actionSymbols] = await this.matchWhen(
           record,
           sync,
@@ -118,7 +130,21 @@ export class SyncConcept {
             this.logFrames(`After processing \`where\`:`, frames);
           }
           await this.addThen(frames, sync, actionSymbols);
+        } else {
+          if (
+            this.logging === Logging.TRACE || this.logging === Logging.VERBOSE
+          ) {
+            console.log(`[SyncEngine] Sync ${sync.sync} did not match`);
+          }
         }
+      }
+    } else {
+      if (this.logging === Logging.TRACE || this.logging === Logging.VERBOSE) {
+        console.log(
+          `[SyncEngine] No syncs found for action ${
+            (record.action as InstrumentedAction).action?.name || "unknown"
+          }`,
+        );
       }
     }
   }
