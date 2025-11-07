@@ -17,17 +17,38 @@ export const RegisterRequest: Sync = (
   ]),
   where: (frames: Frames) => {
     console.log("RegisterRequest frames", frames);
-    // Ensure username and password are provided
-    const filtered = frames.filter((frame) => {
-      const frameData = frame as { [key: string]: unknown };
-      return frameData.username !== undefined &&
-        frameData.username !== null &&
-        frameData.username !== "" &&
-        frameData.password !== undefined &&
-        frameData.password !== null &&
-        frameData.password !== "";
+    const filtered = frames.filter((frame, index) => {
+      const providedUsername = frame[username];
+      const providedPassword = frame[password];
+
+      const hasUsername = typeof providedUsername === "string" &&
+        providedUsername.trim() !== "";
+      const hasPassword = typeof providedPassword === "string" &&
+        providedPassword.trim() !== "";
+
+      if (!hasUsername || !hasPassword) {
+        console.warn("RegisterRequest dropping frame", {
+          index,
+          hasUsername,
+          hasPassword,
+          requestId: frame[request],
+          rawUsername: providedUsername,
+          rawPasswordPresent: providedPassword !== undefined &&
+            providedPassword !== null,
+        });
+      }
+
+      return hasUsername && hasPassword;
     });
-    console.log("RegisterRequest filtered frames", filtered);
+
+    console.log(
+      "RegisterRequest filtered frame summaries",
+      filtered.map((frame) => ({
+        username: frame[username],
+        requestId: frame[request],
+      })),
+    );
+
     return filtered;
   },
   then: actions([UserAuthentication.register, {
@@ -62,17 +83,38 @@ export const AuthenticateRequest: Sync = (
   ]),
   where: (frames: Frames) => {
     console.log("AuthenticateRequest frames", frames);
-    // Ensure username and password are provided
-    const filtered = frames.filter((frame) => {
-      const frameData = frame as { [key: string]: unknown };
-      return frameData.username !== undefined &&
-        frameData.username !== null &&
-        frameData.username !== "" &&
-        frameData.password !== undefined &&
-        frameData.password !== null &&
-        frameData.password !== "";
+    const filtered = frames.filter((frame, index) => {
+      const providedUsername = frame[username];
+      const providedPassword = frame[password];
+
+      const hasUsername = typeof providedUsername === "string" &&
+        providedUsername.trim() !== "";
+      const hasPassword = typeof providedPassword === "string" &&
+        providedPassword.trim() !== "";
+
+      if (!hasUsername || !hasPassword) {
+        console.warn("AuthenticateRequest dropping frame", {
+          index,
+          hasUsername,
+          hasPassword,
+          requestId: frame[request],
+          rawUsername: providedUsername,
+          rawPasswordPresent: providedPassword !== undefined &&
+            providedPassword !== null,
+        });
+      }
+
+      return hasUsername && hasPassword;
     });
-    console.log("AuthenticateRequest filtered frames", filtered);
+
+    console.log(
+      "AuthenticateRequest filtered frame summaries",
+      filtered.map((frame) => ({
+        username: frame[username],
+        requestId: frame[request],
+      })),
+    );
+
     return filtered;
   },
   then: actions([UserAuthentication.authenticate, {
