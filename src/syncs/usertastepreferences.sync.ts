@@ -15,31 +15,46 @@ export const AddLikedDishRequest: Sync = (
     },
     { request },
   ]),
-  where: async (frames: Frames) => {
-    // Verify user exists and required parameters are provided
-    const filtered = frames.filter((frame) => {
-      const frameData = frame as { [key: string]: unknown };
-      return frameData.user !== undefined &&
-        frameData.user !== null &&
-        frameData.user !== "" &&
-        frameData.dish !== undefined &&
-        frameData.dish !== null &&
-        frameData.dish !== "";
-    });
-    // Verify each user exists
-    const verified: Frames = new Frames();
-    for (const frame of filtered) {
-      const frameData = frame as { [key: string]: unknown };
-      const userValue = frameData.user;
-      if (typeof userValue === "string") {
-        verified.push(frame);
-      }
-    }
-    return verified;
-  },
+  where: (frames: Frames) =>
+    frames.filter((frame) => {
+      const userValue = frame[user];
+      const dishValue = frame[dish];
+
+      const hasUser = typeof userValue === "string" && userValue.trim() !== "";
+      const hasDish = typeof dishValue === "string" && dishValue.trim() !== "";
+
+      return hasUser && hasDish;
+    }),
   then: actions([UserTastePreferences.addLikedDish, {
     user,
     dish,
+  }]),
+});
+export const AddLikedDishValidation: Sync = (
+  { request, user, dish },
+) => ({
+  when: actions([
+    Requesting.request,
+    {
+      path: "/UserTastePreferences/addLikedDish",
+      user,
+      dish,
+    },
+    { request },
+  ]),
+  where: (frames: Frames) =>
+    frames.filter((frame) => {
+      const userValue = frame[user];
+      const dishValue = frame[dish];
+
+      const hasUser = typeof userValue === "string" && userValue.trim() !== "";
+      const hasDish = typeof dishValue === "string" && dishValue.trim() !== "";
+
+      return !(hasUser && hasDish);
+    }),
+  then: actions([Requesting.respond, {
+    request,
+    error: "User and dish are required to add a liked dish.",
   }]),
 });
 export const AddLikedDishResponse: Sync = ({ request }) => ({
@@ -66,31 +81,46 @@ export const RemoveLikedDishRequest: Sync = (
     },
     { request },
   ]),
-  where: async (frames: Frames) => {
-    // Verify user exists and required parameters are provided
-    const filtered = frames.filter((frame) => {
-      const frameData = frame as { [key: string]: unknown };
-      return frameData.user !== undefined &&
-        frameData.user !== null &&
-        frameData.user !== "" &&
-        frameData.dish !== undefined &&
-        frameData.dish !== null &&
-        frameData.dish !== "";
-    });
-    // Verify each user exists
-    const verified: Frames = new Frames();
-    for (const frame of filtered) {
-      const frameData = frame as { [key: string]: unknown };
-      const userValue = frameData.user;
-      if (typeof userValue === "string") {
-        verified.push(frame);
-      }
-    }
-    return verified;
-  },
+  where: (frames: Frames) =>
+    frames.filter((frame) => {
+      const userValue = frame[user];
+      const dishValue = frame[dish];
+
+      const hasUser = typeof userValue === "string" && userValue.trim() !== "";
+      const hasDish = typeof dishValue === "string" && dishValue.trim() !== "";
+
+      return hasUser && hasDish;
+    }),
   then: actions([UserTastePreferences.removeLikedDish, {
     user,
     dish,
+  }]),
+});
+export const RemoveLikedDishValidation: Sync = (
+  { request, user, dish },
+) => ({
+  when: actions([
+    Requesting.request,
+    {
+      path: "/UserTastePreferences/removeLikedDish",
+      user,
+      dish,
+    },
+    { request },
+  ]),
+  where: (frames: Frames) =>
+    frames.filter((frame) => {
+      const userValue = frame[user];
+      const dishValue = frame[dish];
+
+      const hasUser = typeof userValue === "string" && userValue.trim() !== "";
+      const hasDish = typeof dishValue === "string" && dishValue.trim() !== "";
+
+      return !(hasUser && hasDish);
+    }),
+  then: actions([Requesting.respond, {
+    request,
+    error: "User and dish are required to remove a liked dish.",
   }]),
 });
 export const RemoveLikedDishResponse: Sync = ({ request }) => ({
@@ -117,31 +147,46 @@ export const AddDislikedDishRequest: Sync = (
     },
     { request },
   ]),
-  where: async (frames: Frames) => {
-    // Verify user exists and required parameters are provided
-    const filtered = frames.filter((frame) => {
-      const frameData = frame as { [key: string]: unknown };
-      return frameData.user !== undefined &&
-        frameData.user !== null &&
-        frameData.user !== "" &&
-        frameData.dish !== undefined &&
-        frameData.dish !== null &&
-        frameData.dish !== "";
-    });
-    // Verify each user exists
-    const verified: Frames = new Frames();
-    for (const frame of filtered) {
-      const frameData = frame as { [key: string]: unknown };
-      const userValue = frameData.user;
-      if (typeof userValue === "string") {
-        verified.push(frame);
-      }
-    }
-    return verified;
-  },
+  where: (frames: Frames) =>
+    frames.filter((frame) => {
+      const userValue = frame[user];
+      const dishValue = frame[dish];
+
+      const hasUser = typeof userValue === "string" && userValue.trim() !== "";
+      const hasDish = typeof dishValue === "string" && dishValue.trim() !== "";
+
+      return hasUser && hasDish;
+    }),
   then: actions([UserTastePreferences.addDislikedDish, {
     user,
     dish,
+  }]),
+});
+export const AddDislikedDishValidation: Sync = (
+  { request, user, dish },
+) => ({
+  when: actions([
+    Requesting.request,
+    {
+      path: "/UserTastePreferences/addDislikedDish",
+      user,
+      dish,
+    },
+    { request },
+  ]),
+  where: (frames: Frames) =>
+    frames.filter((frame) => {
+      const userValue = frame[user];
+      const dishValue = frame[dish];
+
+      const hasUser = typeof userValue === "string" && userValue.trim() !== "";
+      const hasDish = typeof dishValue === "string" && dishValue.trim() !== "";
+
+      return !(hasUser && hasDish);
+    }),
+  then: actions([Requesting.respond, {
+    request,
+    error: "User and dish are required to add a disliked dish.",
   }]),
 });
 export const AddDislikedDishResponse: Sync = ({ request }) => ({
@@ -168,31 +213,46 @@ export const RemoveDislikedDishRequest: Sync = (
     },
     { request },
   ]),
-  where: async (frames: Frames) => {
-    // Verify user exists and required parameters are provided
-    const filtered = frames.filter((frame) => {
-      const frameData = frame as { [key: string]: unknown };
-      return frameData.user !== undefined &&
-        frameData.user !== null &&
-        frameData.user !== "" &&
-        frameData.dish !== undefined &&
-        frameData.dish !== null &&
-        frameData.dish !== "";
-    });
-    // Verify each user exists
-    const verified: Frames = new Frames();
-    for (const frame of filtered) {
-      const frameData = frame as { [key: string]: unknown };
-      const userValue = frameData.user;
-      if (typeof userValue === "string") {
-        verified.push(frame);
-      }
-    }
-    return verified;
-  },
+  where: (frames: Frames) =>
+    frames.filter((frame) => {
+      const userValue = frame[user];
+      const dishValue = frame[dish];
+
+      const hasUser = typeof userValue === "string" && userValue.trim() !== "";
+      const hasDish = typeof dishValue === "string" && dishValue.trim() !== "";
+
+      return hasUser && hasDish;
+    }),
   then: actions([UserTastePreferences.removeDislikedDish, {
     user,
     dish,
+  }]),
+});
+export const RemoveDislikedDishValidation: Sync = (
+  { request, user, dish },
+) => ({
+  when: actions([
+    Requesting.request,
+    {
+      path: "/UserTastePreferences/removeDislikedDish",
+      user,
+      dish,
+    },
+    { request },
+  ]),
+  where: (frames: Frames) =>
+    frames.filter((frame) => {
+      const userValue = frame[user];
+      const dishValue = frame[dish];
+
+      const hasUser = typeof userValue === "string" && userValue.trim() !== "";
+      const hasDish = typeof dishValue === "string" && dishValue.trim() !== "";
+
+      return !(hasUser && hasDish);
+    }),
+  then: actions([Requesting.respond, {
+    request,
+    error: "User and dish are required to remove a disliked dish.",
   }]),
 });
 export const RemoveDislikedDishResponse: Sync = ({ request }) => ({

@@ -16,8 +16,7 @@ export const RegisterRequest: Sync = (
     { request },
   ]),
   where: (frames: Frames) => {
-    console.log("RegisterRequest frames", frames);
-    const filtered = frames.filter((frame, index) => {
+    const filtered = frames.filter((frame) => {
       const providedUsername = frame[username];
       const providedPassword = frame[password];
 
@@ -26,34 +25,42 @@ export const RegisterRequest: Sync = (
       const hasPassword = typeof providedPassword === "string" &&
         providedPassword.trim() !== "";
 
-      if (!hasUsername || !hasPassword) {
-        console.warn("RegisterRequest dropping frame", {
-          index,
-          hasUsername,
-          hasPassword,
-          requestId: frame[request],
-          rawUsername: providedUsername,
-          rawPasswordPresent: providedPassword !== undefined &&
-            providedPassword !== null,
-        });
-      }
-
       return hasUsername && hasPassword;
     });
-
-    console.log(
-      "RegisterRequest filtered frame summaries",
-      filtered.map((frame) => ({
-        username: frame[username],
-        requestId: frame[request],
-      })),
-    );
-
     return filtered;
   },
   then: actions([UserAuthentication.register, {
     username,
     password,
+  }]),
+});
+export const RegisterRequestValidation: Sync = (
+  { request, username, password },
+) => ({
+  when: actions([
+    Requesting.request,
+    {
+      path: "/UserAuthentication/register",
+      username,
+      password,
+    },
+    { request },
+  ]),
+  where: (frames: Frames) =>
+    frames.filter((frame) => {
+      const providedUsername = frame[username];
+      const providedPassword = frame[password];
+
+      const hasUsername = typeof providedUsername === "string" &&
+        providedUsername.trim() !== "";
+      const hasPassword = typeof providedPassword === "string" &&
+        providedPassword.trim() !== "";
+
+      return !(hasUsername && hasPassword);
+    }),
+  then: actions([Requesting.respond, {
+    request,
+    error: "Username and password are required.",
   }]),
 });
 export const RegisterResponse: Sync = (
@@ -82,8 +89,7 @@ export const AuthenticateRequest: Sync = (
     { request },
   ]),
   where: (frames: Frames) => {
-    console.log("AuthenticateRequest frames", frames);
-    const filtered = frames.filter((frame, index) => {
+    const filtered = frames.filter((frame) => {
       const providedUsername = frame[username];
       const providedPassword = frame[password];
 
@@ -92,34 +98,42 @@ export const AuthenticateRequest: Sync = (
       const hasPassword = typeof providedPassword === "string" &&
         providedPassword.trim() !== "";
 
-      if (!hasUsername || !hasPassword) {
-        console.warn("AuthenticateRequest dropping frame", {
-          index,
-          hasUsername,
-          hasPassword,
-          requestId: frame[request],
-          rawUsername: providedUsername,
-          rawPasswordPresent: providedPassword !== undefined &&
-            providedPassword !== null,
-        });
-      }
-
       return hasUsername && hasPassword;
     });
-
-    console.log(
-      "AuthenticateRequest filtered frame summaries",
-      filtered.map((frame) => ({
-        username: frame[username],
-        requestId: frame[request],
-      })),
-    );
-
     return filtered;
   },
   then: actions([UserAuthentication.authenticate, {
     username,
     password,
+  }]),
+});
+export const AuthenticateRequestValidation: Sync = (
+  { request, username, password },
+) => ({
+  when: actions([
+    Requesting.request,
+    {
+      path: "/UserAuthentication/authenticate",
+      username,
+      password,
+    },
+    { request },
+  ]),
+  where: (frames: Frames) =>
+    frames.filter((frame) => {
+      const providedUsername = frame[username];
+      const providedPassword = frame[password];
+
+      const hasUsername = typeof providedUsername === "string" &&
+        providedUsername.trim() !== "";
+      const hasPassword = typeof providedPassword === "string" &&
+        providedPassword.trim() !== "";
+
+      return !(hasUsername && hasPassword);
+    }),
+  then: actions([Requesting.respond, {
+    request,
+    error: "Username and password are required.",
   }]),
 });
 export const AuthenticateResponse: Sync = (
