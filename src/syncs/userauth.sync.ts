@@ -16,9 +16,9 @@ export const RegisterRequest: Sync = (
     { request },
   ]),
   where: (frames: Frames) => {
-    console.log("AuthenticateRequest frames", frames);
+    console.log("RegisterRequest frames", frames);
     // Ensure username and password are provided
-    return frames.filter((frame) => {
+    const filtered = frames.filter((frame) => {
       const frameData = frame as { [key: string]: unknown };
       return frameData.username !== undefined &&
         frameData.username !== null &&
@@ -27,6 +27,8 @@ export const RegisterRequest: Sync = (
         frameData.password !== null &&
         frameData.password !== "";
     });
+    console.log("RegisterRequest filtered frames", filtered);
+    return filtered;
   },
   then: actions([UserAuthentication.register, {
     username,
@@ -61,7 +63,7 @@ export const AuthenticateRequest: Sync = (
   where: (frames: Frames) => {
     console.log("AuthenticateRequest frames", frames);
     // Ensure username and password are provided
-    return frames.filter((frame) => {
+    const filtered = frames.filter((frame) => {
       const frameData = frame as { [key: string]: unknown };
       return frameData.username !== undefined &&
         frameData.username !== null &&
@@ -70,6 +72,8 @@ export const AuthenticateRequest: Sync = (
         frameData.password !== null &&
         frameData.password !== "";
     });
+    console.log("AuthenticateRequest filtered frames", filtered);
+    return filtered;
   },
   then: actions([UserAuthentication.authenticate, {
     username,
