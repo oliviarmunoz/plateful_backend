@@ -118,18 +118,10 @@ export default class RequestingConcept {
   async respond(
     { request, ...response }: { request: Request; [key: string]: unknown },
   ): Promise<{ request: string }> {
-    console.log(
-      `[Requesting] respond called for request: ${request}`,
-      response,
-    );
     const pendingRequest = this.pending.get(request);
     if (pendingRequest) {
       // Resolve the promise for any waiting `_awaitResponse` call.
       pendingRequest.resolve(response);
-    } else {
-      console.log(
-        `[Requesting] WARNING: respond called for request ${request} but no pending request found`,
-      );
     }
 
     // Update the persisted request document with the response.
@@ -274,12 +266,9 @@ export function startRequestingServer(
       // e.g., if base is /api and request is /api/users/create, path is /users/create
       const actionPath = c.req.path.substring(REQUESTING_BASE_URL.length);
 
-      // Filter out 'request' and 'path' from body if present (these are backend-managed fields)
-      const { request: _, path: __, ...bodyWithoutSystemFields } = body;
-
       // Combine the path from the URL with the JSON body to form the action's input.
       const inputs = {
-        ...bodyWithoutSystemFields,
+        ...body,
         path: actionPath,
       };
 
@@ -287,9 +276,6 @@ export function startRequestingServer(
 
       // 1. Trigger the 'request' action.
       const { request } = await Requesting.request(inputs);
-      console.log(
-        `[Requesting] Request action completed with request ID: ${request}`,
-      );
 
       // 2. Await the response via the query. This is where the server waits for
       //    synchronizations to trigger the 'respond' action.
@@ -317,4 +303,3 @@ export function startRequestingServer(
 
   Deno.serve({ port: PORT }, app.fetch);
 }
-
