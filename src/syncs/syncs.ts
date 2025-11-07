@@ -7,25 +7,6 @@ import {
 import { actions, Frames, Sync } from "@engine";
 import { ID } from "@utils/types.ts";
 
-console.log("[Syncs] ========== MODULE TOP-LEVEL CODE EXECUTING ==========");
-console.log("[Syncs] Module URL:", import.meta.url);
-console.log("[Syncs] Current time:", new Date().toISOString());
-
-// Debug: Check if concepts are available
-console.log("[Syncs] Top-level code executing...");
-console.log("[Syncs] Concepts available:", {
-  Feedback: !!Feedback,
-  Requesting: !!Requesting,
-  UserAuthentication: !!UserAuthentication,
-  UserTastePreferences: !!UserTastePreferences,
-});
-console.log("[Syncs] Concepts values:", {
-  Feedback: Feedback,
-  Requesting: Requesting,
-  UserAuthentication: UserAuthentication,
-  UserTastePreferences: UserTastePreferences,
-});
-
 /**
  * Helper function to verify user exists
  * Returns true if user exists (no error from _getUsername)
@@ -43,36 +24,6 @@ async function verifyUserExists(userId: ID | string): Promise<boolean> {
 
 // Feedback
 // submitFeedback
-// Error handling: invalid user
-export const SubmitFeedbackErrorInvalidUser: Sync = ({ request, author }) => ({
-  when: actions([
-    Requesting.request,
-    { path: "/Feedback/submitFeedback", author },
-    { request },
-  ]),
-  where: async (frames: Frames) => {
-    const filtered = frames.filter((frame) => {
-      const authorValue = (frame as { [key: string]: unknown }).author;
-      return typeof authorValue === "string" && authorValue !== "";
-    });
-    const invalid: Frames = new Frames();
-    for (const frame of filtered) {
-      const authorValue = (frame as { [key: string]: unknown }).author;
-      if (
-        typeof authorValue === "string" &&
-        !(await verifyUserExists(authorValue))
-      ) {
-        invalid.push(frame);
-      }
-    }
-    return invalid;
-  },
-  then: actions([Requesting.respond, {
-    request,
-    error: "Invalid user. Please ensure you are authenticated.",
-  }]),
-});
-
 export const SubmitFeedbackRequest: Sync = (
   { request, author, item, rating },
 ) => ({
@@ -81,6 +32,25 @@ export const SubmitFeedbackRequest: Sync = (
     { path: "/Feedback/submitFeedback", author, item, rating },
     { request },
   ]),
+  where: async (frames: Frames) => {
+    // Verify that author (user) exists before allowing feedback submission
+    const filtered = frames.filter((frame) => {
+      const authorValue = (frame as { [key: string]: unknown }).author;
+      return authorValue !== undefined && authorValue !== null &&
+        authorValue !== "";
+    });
+    // Verify each author exists
+    const verified: Frames = new Frames();
+    for (const frame of filtered) {
+      const authorValue = (frame as { [key: string]: unknown }).author;
+      if (
+        typeof authorValue === "string" && await verifyUserExists(authorValue)
+      ) {
+        verified.push(frame);
+      }
+    }
+    return verified;
+  },
   then: actions([Feedback.submitFeedback, {
     author,
     item,
@@ -96,31 +66,6 @@ export const SubmitFeedbackResponse: Sync = ({ request, feedback }) => ({
 });
 
 // updateFeedback
-// Error handling: feedback not found or unauthorized
-export const UpdateFeedbackError: Sync = ({ request, author, item }) => ({
-  when: actions([
-    Requesting.request,
-    { path: "/Feedback/updateFeedback", author, item },
-    { request },
-  ]),
-  where: async (frames: Frames) => {
-    const feedbackResults = await frames.queryAsync(
-      Feedback._getFeedback,
-      { author, item },
-      {},
-    );
-    // Return frames where feedback doesn't exist or has error
-    return feedbackResults.filter((frame) => {
-      const result = frame as { feedback?: unknown; error?: string };
-      return result.feedback === undefined || result.error !== undefined;
-    });
-  },
-  then: actions([Requesting.respond, {
-    request,
-    error: "Feedback not found or you do not have permission to update it.",
-  }]),
-});
-
 // Verify that feedback exists and author matches (ownership check)
 export const UpdateFeedbackRequest: Sync = (
   { request, author, item, newRating },
@@ -158,31 +103,6 @@ export const UpdateFeedbackResponse: Sync = ({ request, updatedFeedback }) => ({
 });
 
 // deleteFeedback
-// Error handling: feedback not found or unauthorized
-export const DeleteFeedbackError: Sync = ({ request, author, item }) => ({
-  when: actions([
-    Requesting.request,
-    { path: "/Feedback/deleteFeedback", author, item },
-    { request },
-  ]),
-  where: async (frames: Frames) => {
-    const feedbackResults = await frames.queryAsync(
-      Feedback._getFeedback,
-      { author, item },
-      {},
-    );
-    // Return frames where feedback doesn't exist or has error
-    return feedbackResults.filter((frame) => {
-      const result = frame as { feedback?: unknown; error?: string };
-      return result.feedback === undefined || result.error !== undefined;
-    });
-  },
-  then: actions([Requesting.respond, {
-    request,
-    error: "Feedback not found or you do not have permission to delete it.",
-  }]),
-});
-
 // Verify that feedback exists and author matches (ownership check)
 export const DeleteFeedbackRequest: Sync = (
   { request, author, item },
@@ -232,6 +152,18 @@ export const RegisterRequest: Sync = (
     },
     { request },
   ]),
+  where: (frames: Frames) => {
+    // Ensure username and password are provided
+    return frames.filter((frame) => {
+      const frameData = frame as { [key: string]: unknown };
+      return frameData.username !== undefined &&
+        frameData.username !== null &&
+        frameData.username !== "" &&
+        frameData.password !== undefined &&
+        frameData.password !== null &&
+        frameData.password !== "";
+    });
+  },
   then: actions([UserAuthentication.register, {
     username,
     password,
@@ -262,22 +194,23 @@ export const AuthenticateRequest: Sync = (
     },
     { request },
   ]),
+  where: (frames: Frames) => {
+    // Ensure username and password are provided
+    return frames.filter((frame) => {
+      const frameData = frame as { [key: string]: unknown };
+      return frameData.username !== undefined &&
+        frameData.username !== null &&
+        frameData.username !== "" &&
+        frameData.password !== undefined &&
+        frameData.password !== null &&
+        frameData.password !== "";
+    });
+  },
   then: actions([UserAuthentication.authenticate, {
     username,
     password,
   }]),
 });
-// Handle authentication errors (wrong username/password)
-export const AuthenticateErrorResponse: Sync = ({ request, error }) => ({
-  when: actions(
-    [Requesting.request, { path: "/UserAuthentication/authenticate" }, {
-      request,
-    }],
-    [UserAuthentication.authenticate, {}, { error }],
-  ),
-  then: actions([Requesting.respond, { request, error }]),
-});
-
 export const AuthenticateResponse: Sync = (
   { request, user },
 ) => ({
@@ -291,36 +224,6 @@ export const AuthenticateResponse: Sync = (
 });
 
 // addLikedDish
-// Error handling: invalid user
-export const AddLikedDishErrorInvalidUser: Sync = ({ request, user }) => ({
-  when: actions([
-    Requesting.request,
-    { path: "/UserTastePreferences/addLikedDish", user },
-    { request },
-  ]),
-  where: async (frames: Frames) => {
-    const filtered = frames.filter((frame) => {
-      const frameData = frame as { [key: string]: unknown };
-      return typeof frameData.user === "string" && frameData.user !== "";
-    });
-    const invalid: Frames = new Frames();
-    for (const frame of filtered) {
-      const userValue = (frame as { [key: string]: unknown }).user;
-      if (
-        typeof userValue === "string" &&
-        !(await verifyUserExists(userValue))
-      ) {
-        invalid.push(frame);
-      }
-    }
-    return invalid;
-  },
-  then: actions([Requesting.respond, {
-    request,
-    error: "Invalid user. Please ensure you are authenticated.",
-  }]),
-});
-
 // Users should only be able to modify their own taste preferences
 export const AddLikedDishRequest: Sync = (
   { request, user, dish },
@@ -334,6 +237,28 @@ export const AddLikedDishRequest: Sync = (
     },
     { request },
   ]),
+  where: async (frames: Frames) => {
+    // Verify user exists and required parameters are provided
+    const filtered = frames.filter((frame) => {
+      const frameData = frame as { [key: string]: unknown };
+      return frameData.user !== undefined &&
+        frameData.user !== null &&
+        frameData.user !== "" &&
+        frameData.dish !== undefined &&
+        frameData.dish !== null &&
+        frameData.dish !== "";
+    });
+    // Verify each user exists
+    const verified: Frames = new Frames();
+    for (const frame of filtered) {
+      const frameData = frame as { [key: string]: unknown };
+      const userValue = frameData.user;
+      if (typeof userValue === "string" && await verifyUserExists(userValue)) {
+        verified.push(frame);
+      }
+    }
+    return verified;
+  },
   then: actions([UserTastePreferences.addLikedDish, {
     user,
     dish,
@@ -350,35 +275,6 @@ export const AddLikedDishResponse: Sync = ({ request }) => ({
 });
 
 // removeLikedDish
-export const RemoveLikedDishErrorInvalidUser: Sync = ({ request, user }) => ({
-  when: actions([
-    Requesting.request,
-    { path: "/UserTastePreferences/removeLikedDish", user },
-    { request },
-  ]),
-  where: async (frames: Frames) => {
-    const filtered = frames.filter((frame) => {
-      const frameData = frame as { [key: string]: unknown };
-      return typeof frameData.user === "string" && frameData.user !== "";
-    });
-    const invalid: Frames = new Frames();
-    for (const frame of filtered) {
-      const userValue = (frame as { [key: string]: unknown }).user;
-      if (
-        typeof userValue === "string" &&
-        !(await verifyUserExists(userValue))
-      ) {
-        invalid.push(frame);
-      }
-    }
-    return invalid;
-  },
-  then: actions([Requesting.respond, {
-    request,
-    error: "Invalid user. Please ensure you are authenticated.",
-  }]),
-});
-
 // Users should only be able to modify their own taste preferences
 export const RemoveLikedDishRequest: Sync = (
   { request, user, dish },
@@ -392,6 +288,28 @@ export const RemoveLikedDishRequest: Sync = (
     },
     { request },
   ]),
+  where: async (frames: Frames) => {
+    // Verify user exists and required parameters are provided
+    const filtered = frames.filter((frame) => {
+      const frameData = frame as { [key: string]: unknown };
+      return frameData.user !== undefined &&
+        frameData.user !== null &&
+        frameData.user !== "" &&
+        frameData.dish !== undefined &&
+        frameData.dish !== null &&
+        frameData.dish !== "";
+    });
+    // Verify each user exists
+    const verified: Frames = new Frames();
+    for (const frame of filtered) {
+      const frameData = frame as { [key: string]: unknown };
+      const userValue = frameData.user;
+      if (typeof userValue === "string" && await verifyUserExists(userValue)) {
+        verified.push(frame);
+      }
+    }
+    return verified;
+  },
   then: actions([UserTastePreferences.removeLikedDish, {
     user,
     dish,
@@ -408,35 +326,6 @@ export const RemoveLikedDishResponse: Sync = ({ request }) => ({
 });
 
 // addDislikedDish
-export const AddDislikedDishErrorInvalidUser: Sync = ({ request, user }) => ({
-  when: actions([
-    Requesting.request,
-    { path: "/UserTastePreferences/addDislikedDish", user },
-    { request },
-  ]),
-  where: async (frames: Frames) => {
-    const filtered = frames.filter((frame) => {
-      const frameData = frame as { [key: string]: unknown };
-      return typeof frameData.user === "string" && frameData.user !== "";
-    });
-    const invalid: Frames = new Frames();
-    for (const frame of filtered) {
-      const userValue = (frame as { [key: string]: unknown }).user;
-      if (
-        typeof userValue === "string" &&
-        !(await verifyUserExists(userValue))
-      ) {
-        invalid.push(frame);
-      }
-    }
-    return invalid;
-  },
-  then: actions([Requesting.respond, {
-    request,
-    error: "Invalid user. Please ensure you are authenticated.",
-  }]),
-});
-
 // Users should only be able to modify their own taste preferences
 export const AddDislikedDishRequest: Sync = (
   { request, user, dish },
@@ -450,6 +339,28 @@ export const AddDislikedDishRequest: Sync = (
     },
     { request },
   ]),
+  where: async (frames: Frames) => {
+    // Verify user exists and required parameters are provided
+    const filtered = frames.filter((frame) => {
+      const frameData = frame as { [key: string]: unknown };
+      return frameData.user !== undefined &&
+        frameData.user !== null &&
+        frameData.user !== "" &&
+        frameData.dish !== undefined &&
+        frameData.dish !== null &&
+        frameData.dish !== "";
+    });
+    // Verify each user exists
+    const verified: Frames = new Frames();
+    for (const frame of filtered) {
+      const frameData = frame as { [key: string]: unknown };
+      const userValue = frameData.user;
+      if (typeof userValue === "string" && await verifyUserExists(userValue)) {
+        verified.push(frame);
+      }
+    }
+    return verified;
+  },
   then: actions([UserTastePreferences.addDislikedDish, {
     user,
     dish,
@@ -466,37 +377,6 @@ export const AddDislikedDishResponse: Sync = ({ request }) => ({
 });
 
 // removeDislikedDish
-export const RemoveDislikedDishErrorInvalidUser: Sync = (
-  { request, user },
-) => ({
-  when: actions([
-    Requesting.request,
-    { path: "/UserTastePreferences/removeDislikedDish", user },
-    { request },
-  ]),
-  where: async (frames: Frames) => {
-    const filtered = frames.filter((frame) => {
-      const frameData = frame as { [key: string]: unknown };
-      return typeof frameData.user === "string" && frameData.user !== "";
-    });
-    const invalid: Frames = new Frames();
-    for (const frame of filtered) {
-      const userValue = (frame as { [key: string]: unknown }).user;
-      if (
-        typeof userValue === "string" &&
-        !(await verifyUserExists(userValue))
-      ) {
-        invalid.push(frame);
-      }
-    }
-    return invalid;
-  },
-  then: actions([Requesting.respond, {
-    request,
-    error: "Invalid user. Please ensure you are authenticated.",
-  }]),
-});
-
 // Users should only be able to modify their own taste preferences
 export const RemoveDislikedDishRequest: Sync = (
   { request, user, dish },
@@ -510,6 +390,28 @@ export const RemoveDislikedDishRequest: Sync = (
     },
     { request },
   ]),
+  where: async (frames: Frames) => {
+    // Verify user exists and required parameters are provided
+    const filtered = frames.filter((frame) => {
+      const frameData = frame as { [key: string]: unknown };
+      return frameData.user !== undefined &&
+        frameData.user !== null &&
+        frameData.user !== "" &&
+        frameData.dish !== undefined &&
+        frameData.dish !== null &&
+        frameData.dish !== "";
+    });
+    // Verify each user exists
+    const verified: Frames = new Frames();
+    for (const frame of filtered) {
+      const frameData = frame as { [key: string]: unknown };
+      const userValue = frameData.user;
+      if (typeof userValue === "string" && await verifyUserExists(userValue)) {
+        verified.push(frame);
+      }
+    }
+    return verified;
+  },
   then: actions([UserTastePreferences.removeDislikedDish, {
     user,
     dish,
@@ -525,67 +427,24 @@ export const RemoveDislikedDishResponse: Sync = ({ request }) => ({
   then: actions([Requesting.respond, { request }]),
 });
 
-// Debug: Prepare syncs for export
-const syncsToExport = {
-  SubmitFeedbackErrorInvalidUser,
+// Export all syncs
+export default {
   SubmitFeedbackRequest,
   SubmitFeedbackResponse,
-  UpdateFeedbackError,
   UpdateFeedbackRequest,
   UpdateFeedbackResponse,
-  DeleteFeedbackError,
   DeleteFeedbackRequest,
   DeleteFeedbackResponse,
   RegisterRequest,
   RegisterResponse,
   AuthenticateRequest,
-  AuthenticateErrorResponse,
   AuthenticateResponse,
-  AddLikedDishErrorInvalidUser,
   AddLikedDishRequest,
   AddLikedDishResponse,
-  RemoveLikedDishErrorInvalidUser,
   RemoveLikedDishRequest,
   RemoveLikedDishResponse,
-  AddDislikedDishErrorInvalidUser,
   AddDislikedDishRequest,
   AddDislikedDishResponse,
-  RemoveDislikedDishErrorInvalidUser,
   RemoveDislikedDishRequest,
   RemoveDislikedDishResponse,
 };
-
-// Export a function that returns the syncs
-// This ensures syncs are only created when called, not at module load time
-// This prevents caching issues where syncs might be evaluated before concepts are ready
-export default function getSyncs() {
-  console.log(
-    "[Syncs] getSyncs() called. About to create syncs. Count:",
-    Object.keys(syncsToExport).length,
-  );
-  console.log("[Syncs] Sync names:", Object.keys(syncsToExport));
-
-  // Validate that concepts are available
-  if (
-    !Feedback || !Requesting || !UserAuthentication || !UserTastePreferences
-  ) {
-    console.error(
-      "[Syncs] ERROR: Concepts are not available when syncs.ts is evaluated!",
-    );
-    console.error("[Syncs] Feedback:", Feedback);
-    console.error("[Syncs] Requesting:", Requesting);
-    console.error("[Syncs] UserAuthentication:", UserAuthentication);
-    console.error("[Syncs] UserTastePreferences:", UserTastePreferences);
-    throw new Error(
-      "Concepts must be fully initialized before syncs.ts can be evaluated",
-    );
-  }
-
-  // Validate that syncs are properly defined
-  if (Object.keys(syncsToExport).length === 0) {
-    console.error("[Syncs] ERROR: No syncs were defined!");
-    throw new Error("At least one sync must be defined");
-  }
-
-  return syncsToExport;
-}

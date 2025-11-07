@@ -61,61 +61,19 @@ export class SyncConcept {
     this.Action = actionConcept;
   }
   register(syncs: SyncFunctionMap) {
-    if (this.logging === Logging.TRACE || this.logging === Logging.VERBOSE) {
-      console.log(
-        `[SyncEngine] register() called with ${
-          Object.keys(syncs).length
-        } sync(s)`,
-      );
-    }
     for (const [name, syncFunction] of Object.entries(syncs)) {
-      try {
-        const syncDeclaration = syncFunction($vars);
-        const sync = { sync: name, ...syncDeclaration };
-        this.syncs[name] = sync;
-        // Index each sync by all actions in the `when`
-        for (const { action } of sync.when) {
-          if (
-            this.logging === Logging.TRACE || this.logging === Logging.VERBOSE
-          ) {
-            console.log(
-              `[SyncEngine] Registering sync "${name}" for action: ${
-                (action as InstrumentedAction).action?.name || "unknown"
-              }, action reference:`,
-              action,
-            );
-          }
-          const mappedSyncs = this.syncsByAction.get(action);
-          if (mappedSyncs === undefined) {
-            this.syncsByAction.set(action, new Set([sync]));
-            if (
-              this.logging === Logging.TRACE || this.logging === Logging.VERBOSE
-            ) {
-              console.log(
-                `[SyncEngine] Created new Set for action, now ${this.syncsByAction.size} action(s) in map`,
-              );
-            }
-          } else {
-            mappedSyncs.add(sync);
-            if (
-              this.logging === Logging.TRACE || this.logging === Logging.VERBOSE
-            ) {
-              console.log(
-                `[SyncEngine] Added to existing Set for action, now ${mappedSyncs.size} sync(s) for this action`,
-              );
-            }
-          }
+      const syncDeclaration = syncFunction($vars);
+      const sync = { sync: name, ...syncDeclaration };
+      this.syncs[name] = sync;
+      // Index each sync by all actions in the `when`
+      for (const { action } of sync.when) {
+        const mappedSyncs = this.syncsByAction.get(action);
+        if (mappedSyncs === undefined) {
+          this.syncsByAction.set(action, new Set([sync]));
+        } else {
+          mappedSyncs.add(sync);
         }
-      } catch (error) {
-        console.error(`[SyncEngine] Error registering sync "${name}":`, error);
       }
-    }
-    if (this.logging === Logging.TRACE || this.logging === Logging.VERBOSE) {
-      console.log(
-        `[SyncEngine] Registration complete. Total syncs: ${
-          Object.keys(this.syncs).length
-        }, Total actions in map: ${this.syncsByAction.size}`,
-      );
     }
   }
   async synchronize(record: ActionRecord) {
@@ -142,19 +100,7 @@ export class SyncConcept {
     }
     const syncs = await this.syncsByAction.get(record.action);
     if (syncs) {
-      if (this.logging === Logging.TRACE || this.logging === Logging.VERBOSE) {
-        console.log(
-          `[SyncEngine] Found ${syncs.size} sync(s) for action ${
-            (record.action as InstrumentedAction).action?.name || "unknown"
-          }`,
-        );
-      }
       for (const sync of syncs) {
-        if (
-          this.logging === Logging.TRACE || this.logging === Logging.VERBOSE
-        ) {
-          console.log(`[SyncEngine] Trying to match sync: ${sync.sync}`);
-        }
         let [frames, actionSymbols] = await this.matchWhen(
           record,
           sync,
@@ -172,32 +118,7 @@ export class SyncConcept {
             this.logFrames(`After processing \`where\`:`, frames);
           }
           await this.addThen(frames, sync, actionSymbols);
-        } else {
-          if (
-            this.logging === Logging.TRACE || this.logging === Logging.VERBOSE
-          ) {
-            console.log(`[SyncEngine] Sync ${sync.sync} did not match`);
-          }
         }
-      }
-    } else {
-      if (this.logging === Logging.TRACE || this.logging === Logging.VERBOSE) {
-        const actionName = (record.action as InstrumentedAction).action?.name ||
-          "unknown";
-        console.log(
-          `[SyncEngine] No syncs found for action ${actionName}`,
-        );
-        console.log(
-          `[SyncEngine] Action reference being looked up:`,
-          record.action,
-        );
-        console.log(
-          `[SyncEngine] Available action keys in syncsByAction (${this.syncsByAction.size} total):`,
-          Array.from(this.syncsByAction.keys()).map((a) => ({
-            name: (a as InstrumentedAction).action?.name || "unknown",
-            reference: a,
-          })),
-        );
       }
     }
   }
