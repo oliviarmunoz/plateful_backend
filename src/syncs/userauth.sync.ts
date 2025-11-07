@@ -16,6 +16,7 @@ export const RegisterRequest: Sync = (
     { request },
   ]),
   where: (frames: Frames) => {
+    console.log("AuthenticateRequest frames", frames);
     // Ensure username and password are provided
     return frames.filter((frame) => {
       const frameData = frame as { [key: string]: unknown };
@@ -58,6 +59,7 @@ export const AuthenticateRequest: Sync = (
     { request },
   ]),
   where: (frames: Frames) => {
+    console.log("AuthenticateRequest frames", frames);
     // Ensure username and password are provided
     return frames.filter((frame) => {
       const frameData = frame as { [key: string]: unknown };
