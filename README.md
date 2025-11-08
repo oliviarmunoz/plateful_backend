@@ -19,5 +19,6 @@ User History: See past recommended meals and how you rated them!
 
 Run the back-end using the following script:
 `
-deno task concepts
+deno task build
+deno task start
 `
