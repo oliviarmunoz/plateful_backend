@@ -1,6 +1,7 @@
 # Back-end Repo for Plateful
 
-- [Design Changes](./design-changes.md)
+- [Design Document](assignment4c/designdoc.md)
+- [Reflections Document](assignment4c/reflectiondoc.md)
 
 ## Application Pitch
 
