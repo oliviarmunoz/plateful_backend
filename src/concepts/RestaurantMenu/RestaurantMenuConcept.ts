@@ -30,6 +30,11 @@ import { GeminiLLM } from "@utils/gemini-llm.ts";
       requires: menu item with the given ID exists
       effects: returns true and deletes the menu item
 
+    /getRecommendation (restaurant: Restaurant, user: User): (recommendation: String)
+      requires: a restaurant with the given ID exists and has at least one menu item; a user with the given ID exists
+      effects: returns the name of a menu item from the specified restaurant that is recommended for the user via an LLM,
+      based on their taste preferences and the current menu items. If no specific preferences are found, a generic recommendation is provided.
+
     /_getMenuItems (restaurant: Restaurant): (menuItem: MenuItem)
       requires: true
       effects: returns a set of all menu items associated with the given restaurant, including their name, description, and price
@@ -38,10 +43,10 @@ import { GeminiLLM } from "@utils/gemini-llm.ts";
       requires: menuItem with the given ID exists
       effects: returns the name, description, and price of the specified menu item
 
-    /_getRecommendation (restaurant: Restaurant, user: User): (recommendation: String)
-      requires: a restaurant with the given ID exists and has at least one menu item; a user with the given ID exists
-      effects: returns the name of a menu item from the specified restaurant that is recommended for the user via an LLM,
-      based on their taste preferences and the current menu items. If no specific preferences are found, a generic recommendation is provided.
+    /_getMenuItemByName (name: String): (menuItem: MenuItem)
+      requires: menu item with the given name exists
+      effects: returns the menu item with the given name
+
 */
 
 const PREFIX = "RestaurantMenu" + ".";
@@ -297,5 +302,18 @@ Respond only in JSON format:
       description: item.description,
       price: item.price,
     }];
+  }
+
+  /**
+   * @requires menu item with the given name exists
+   * @effects returns the menu item with the given name
+   * @returns
+   */
+  async _getMenuItemByName(
+    { name }: { name: string },
+  ): Promise<{ menuItem: MenuItem } | { error: string }> {
+    const item = await this.menuItems.findOne({ name });
+    if (!item) return { error: `No menu item found with name '${name}'.` };
+    return { menuItem: item._id };
   }
 }

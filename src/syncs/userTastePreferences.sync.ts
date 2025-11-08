@@ -2,6 +2,7 @@ import { actions, Sync } from "@engine";
 import { Requesting, Sessioning, UserTastePreferences } from "@concepts";
 
 const successResponse = (message: string) => ({ message });
+const errorResponse = (error: string) => ({ error });
 
 // add liked dish syncs
 export const AddLikedDishRequest: Sync = (
@@ -13,12 +14,9 @@ export const AddLikedDishRequest: Sync = (
     { request },
   ]),
   where: async (frames) => {
-    // only allow the user to add a liked dish for themselves if they are authenticated
-    console.log("checking user session...");
-    const res = await frames.query(Sessioning._getUser, { session }, { user });
-    console.log("got user:", res);
-    return res;
+    return await frames.query(Sessioning._getUser, { session }, { user });
   },
+
   then: actions([UserTastePreferences.addLikedDish, { user, dish }]),
 });
 

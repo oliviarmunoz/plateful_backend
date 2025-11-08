@@ -6,6 +6,7 @@ import type { Sync } from "@engine";
 
 import * as sync_auth from "./auth.sync.ts";
 import * as sync_feedback from "./feedback.sync.ts";
+import * as sync_userTastePreferences from "./userTastePreferences.sync.ts";
 import * as sync_restaurantMenu from "./restaurantMenu.sync.ts";
 import * as sync_recommend from "./recommend.sync.ts";
 
@@ -20,6 +21,11 @@ for (const [name, func] of Object.entries(sync_auth)) {
 for (const [name, func] of Object.entries(sync_feedback)) {
   if (typeof func === "function") {
     allSyncs[`feedback.${name}`] = func as Sync;
+  }
+}
+for (const [name, func] of Object.entries(sync_userTastePreferences)) {
+  if (typeof func === "function") {
+    allSyncs[`userTastePreferences.${name}`] = func as Sync;
   }
 }
 for (const [name, func] of Object.entries(sync_restaurantMenu)) {

@@ -32,6 +32,7 @@ export const inclusions: Record<string, string> = {
   // RestaurantMenu
   "/api/RestaurantMenu/_getMenuItems": "menu is public",
   "/api/RestaurantMenu/_getMenuItemDetails": "menu is public",
+  "/api/RestaurantMenu/_getMenuItemByName": "menu is public",
 
   // UserAuthentication
   "/api/UserAuthentication/_getUsername": "usernames are public",
