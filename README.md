@@ -2,6 +2,8 @@
 
 - [Design Document](assignment4c/designdoc.md)
 - [Reflections Document](assignment4c/reflectiondoc.md)
+- [User Walkthrough](assignment4c/screenRecording.mov)
+- [Request Trace](assignment4c/trace.md)
 
 ## Application Pitch
 
