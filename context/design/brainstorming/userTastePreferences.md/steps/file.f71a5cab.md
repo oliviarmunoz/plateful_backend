@@ -1,3 +1,12 @@
+---
+timestamp: 'Fri Nov 07 2025 14:07:12 GMT-0500 (Eastern Standard Time)'
+parent: '[[../20251107_140712.d25493bd.md]]'
+content_id: f71a5cabd06ae679201c74b6561069a3d34b62a54430bd476e30ced61132e9e0
+---
+
+# file: src/syncs/feedback.sync.ts
+
+```typescript
 import { actions, Sync } from "@engine";
 import { Feedback, Requesting, Sessioning } from "@concepts";
 
@@ -95,3 +104,5 @@ export const DeleteFeedbackResponseError: Sync = ({ request, error }) => ({
   ),
   then: actions([Requesting.respond, { request, error }]),
 });
+
+```

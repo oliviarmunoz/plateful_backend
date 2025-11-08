@@ -32,10 +32,6 @@ export const inclusions: Record<string, string> = {
   // RestaurantMenu
   "/api/RestaurantMenu/_getMenuItems": "menu is public",
   "/api/RestaurantMenu/_getMenuItemDetails": "menu is public",
-  "/api/RestaurantMenu/_getRecommendation": "recommendation is public",
-  "/api/RestaurantMenu/addMenuItem": "menu item is public",
-  "/api/RestaurantMenu/updateMenuItem": "menu item is public",
-  "/api/RestaurantMenu/removeMenuItem": "menu item is public",
 
   // UserAuthentication
   "/api/UserAuthentication/_getUsername": "usernames are public",
@@ -70,4 +66,15 @@ export const exclusions: Array<string> = [
   "/api/UserTastePreferences/removeLikedDish",
   "/api/UserTastePreferences/addDislikedDish",
   "/api/UserTastePreferences/removeDislikedDish",
+
+  // RestaurantMenu
+  "/api/RestaurantMenu/getRecommendation",
+  "/api/RestaurantMenu/addMenuItem",
+  "/api/RestaurantMenu/updateMenuItem",
+  "/api/RestaurantMenu/removeMenuItem",
+
+  // Sessioning
+  "/api/Sessioning/create",
+  "/api/Sessioning/delete",
+  "/api/Sessioning/_getUser",
 ];

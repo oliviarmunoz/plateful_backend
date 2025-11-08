@@ -1,3 +1,12 @@
+---
+timestamp: 'Fri Nov 07 2025 13:44:03 GMT-0500 (Eastern Standard Time)'
+parent: '[[../20251107_134403.d77b33fd.md]]'
+content_id: 77b4897e379ca6b7d9cafaf2abe7f722642b26580ff2ba0b95c8283d5f39fc88
+---
+
+# file: src/concepts/Feedback/FeedbackConcept.ts
+
+```typescript
 import { Collection, Db } from "npm:mongodb";
 import { ID } from "@utils/types.ts";
 import { freshID } from "@utils/database.ts";
@@ -223,11 +232,14 @@ export default class FeedbackConcept {
    */
   async _getAllUserRatings(
     { author }: { author: User },
-  ): Promise<Array<FeedbackDocument>> {
+  ): Promise<Array<{ feedback: FeedbackDocument }>> {
     try {
-      return await this.feedbacks.find({ author }).toArray();
-    } catch (_error) {
+      const feedbacks = await this.feedbacks.find({ author }).toArray();
+      return feedbacks.map((feedback) => ({ feedback }));
+    } catch (e) {
       return [];
     }
   }
 }
+
+```

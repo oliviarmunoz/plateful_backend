@@ -4,26 +4,32 @@
 
 import type { Sync } from "@engine";
 
+import * as sync_auth from "./auth.sync.ts";
 import * as sync_feedback from "./feedback.sync.ts";
-import * as sync_usertastepreferences from "./usertastepreferences.sync.ts";
-import * as sync_userauth from "./userauth.sync.ts";
+import * as sync_restaurantMenu from "./restaurantMenu.sync.ts";
+import * as sync_recommend from "./recommend.sync.ts";
 
 const allSyncs: Record<string, Sync> = {};
 
 
+for (const [name, func] of Object.entries(sync_auth)) {
+  if (typeof func === "function") {
+    allSyncs[`auth.${name}`] = func as Sync;
+  }
+}
 for (const [name, func] of Object.entries(sync_feedback)) {
   if (typeof func === "function") {
     allSyncs[`feedback.${name}`] = func as Sync;
   }
 }
-for (const [name, func] of Object.entries(sync_usertastepreferences)) {
+for (const [name, func] of Object.entries(sync_restaurantMenu)) {
   if (typeof func === "function") {
-    allSyncs[`usertastepreferences.${name}`] = func as Sync;
+    allSyncs[`restaurantMenu.${name}`] = func as Sync;
   }
 }
-for (const [name, func] of Object.entries(sync_userauth)) {
+for (const [name, func] of Object.entries(sync_recommend)) {
   if (typeof func === "function") {
-    allSyncs[`userauth.${name}`] = func as Sync;
+    allSyncs[`recommend.${name}`] = func as Sync;
   }
 }
 

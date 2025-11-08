@@ -34,9 +34,6 @@ const PREFIX = "UserAuthentication" + ".";
 // Generic type
 type User = ID;
 
-// Internal entity types
-type Credentials = ID;
-
 /**
  * state
  *   a set of Users with
@@ -47,7 +44,6 @@ interface AuthUser {
   _id: User;
   username: string;
   password: string;
-  isLoggedIn: boolean;
 }
 
 function verifyPassword(
@@ -62,6 +58,8 @@ export default class UserAuthenticationConcept {
 
   constructor(private readonly db: Db) {
     this.users = this.db.collection(PREFIX + "users");
+    // Ensure username is unique at the database level
+    this.users.createIndex({ username: 1 }, { unique: true });
   }
 
   /**
@@ -82,7 +80,6 @@ export default class UserAuthenticationConcept {
       _id: freshID(),
       username,
       password: password,
-      isLoggedIn: false,
     };
 
     await this.users.insertOne(newUser);
@@ -98,9 +95,6 @@ export default class UserAuthenticationConcept {
   async authenticate(
     { username, password }: { username: string; password: string },
   ): Promise<{ user: User } | { error: string }> {
-    console.log(
-      `[UserAuthentication] authenticate called with username: ${username}`,
-    );
     const user = await this.users.findOne({ username });
 
     // Check if user exists and password matches
@@ -110,10 +104,6 @@ export default class UserAuthenticationConcept {
       );
       return { error: "Invalid username or password." };
     }
-
-    console.log(
-      `[UserAuthentication] authenticate succeeded for username: ${username}, user ID: ${user._id}`,
-    );
     return { user: user._id };
   }
 
